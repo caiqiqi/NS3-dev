@@ -23,6 +23,8 @@
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
 
+#include "ns3/netanim-module.h"
+
 // Default Network Topology
 //
 // Number of wifi or csma nodes can be increased up to 250
@@ -45,7 +47,7 @@ NS_LOG_COMPONENT_DEFINE ("ThirdScriptExample");
 int 
 main (int argc, char *argv[])
 {
-  bool verbose = true;
+  bool verbose = false;
   uint32_t nCsma = 3;
   uint32_t nWifi = 3;
   bool tracing = false;
@@ -156,6 +158,14 @@ main (int argc, char *argv[])
   address.Assign (staDevices);
   address.Assign (apDevices);
 
+  /*
+  * Empty pcap files usually come up because no packets ever leave any of the nodes and 
+  * onto the channel(s). Try moving the "Ipv4GlobalRoutingHelper::PopulateRoutingTables();" line 
+  * before the part where you create the application source/sink. 
+  * Verify if your traffic generating nodes have routes to their destinations.
+  */
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
   UdpEchoServerHelper echoServer (9);
 
   ApplicationContainer serverApps = echoServer.Install (csmaNodes.Get (nCsma));
@@ -172,7 +182,6 @@ main (int argc, char *argv[])
   clientApps.Start (Seconds (2.0));
   clientApps.Stop (Seconds (10.0));
 
-  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   Simulator::Stop (Seconds (10.0));
 
@@ -182,6 +191,9 @@ main (int argc, char *argv[])
       phy.EnablePcap ("third", apDevices.Get (0));
       csma.EnablePcap ("third", csmaDevices.Get (0), true);
     }
+  // for animation
+  AnimationInterface anim("third.xml");
+  //anim.EnablePacketMetadata();
 
   Simulator::Run ();
   Simulator::Destroy ();

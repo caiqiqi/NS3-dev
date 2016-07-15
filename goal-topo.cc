@@ -56,6 +56,8 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 // unless you specify the -v option
 bool verbose = false;
 bool use_drop = false;
+bool tracing  = false;
+bool pcap     = true;
 ns3::Time timeout = ns3::Seconds (0);
 
 bool
@@ -322,42 +324,56 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Assigning IP Addresses.-----");
   Ipv4AddressHelper address;
   address.SetBase ("192.168.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer ApInterfaceA;    
+  ApInterfaceA = address.Assign (ap1Device);    // Ap1: 192.168.1.1
   Ipv4InterfaceContainer StaInterfaceA;
   StaInterfaceA = address.Assign (stas1Device);
-  Ipv4InterfaceContainer ApInterfaceA;
-  ApInterfaceA = address.Assign (ap1Device);
+  
   
   address.SetBase ("192.168.2.0", "255.255.255.0");
+  Ipv4InterfaceContainer ApInterfaceB;
+  ApInterfaceB = address.Assign (ap2Device);    // Ap2: 192.168.2.1
   Ipv4InterfaceContainer StaInterfaceB;
   StaInterfaceB = address.Assign (stas2Device);
-  Ipv4InterfaceContainer ApInterfaceB;
-  ApInterfaceB = address.Assign (ap2Device);
+  
   
   address.SetBase ("192.168.3.0", "255.255.255.0");
+  Ipv4InterfaceContainer ApInterfaceC;
+  ApInterfaceC = address.Assign (ap3Device);    // Ap3: 192.168.3.1
   Ipv4InterfaceContainer StaInterfaceC;
   StaInterfaceC = address.Assign (stas3Device);
-  Ipv4InterfaceContainer ApInterfaceC;
-  ApInterfaceC = address.Assign (ap3Device);
+  
 
   // for H1
   address.SetBase ("192.168.4.0", "255.255.255.0");
-  Ipv4InterfaceContainer H1Interface;
-  H1Interface = address.Assign (terminal1Device);
+  Ipv4InterfaceContainer h1Interface;
+  h1Interface = address.Assign (terminal1Device);
   // for H2
   address.SetBase ("192.168.5.0", "255.255.255.0");
-  Ipv4InterfaceContainer H2Interface;
-  H2Interface = address.Assign (terminal2Device);
+  Ipv4InterfaceContainer h2Interface;
+  h2Interface = address.Assign (terminal2Device);
 
+
+  /*
+  * Empty pcap files usually come up because no packets ever leave any of the nodes and 
+  * onto the channel(s). Try moving the "Ipv4GlobalRoutingHelper::PopulateRoutingTables();" line 
+  * before the part where you create the application source/sink. 
+  * Verify if your traffic generating nodes have routes to their destinations.
+  */
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+  
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));    //H2 is the server  
+  //ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(0));
+  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(10.0));  
   
-  UdpEchoClientHelper echoClient (Ipv4Address("192.168.4.1"),port);  
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (10));  
+  //UdpEchoClientHelper echoClient (Ipv4Address("192.168.4.1"),port); 
+  UdpEchoClientHelper echoClient (h2Interface.GetAddress(0) ,port);    // 192.168.5.1
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
   ApplicationContainer clientApps = echoClient.Install(terminalsNode.Get(0));      // H1 is the client
@@ -373,8 +389,11 @@ main (int argc, char *argv[])
   // Configure tracing of all enqueue, dequeue, and NetDevice receive events.
   // Trace output will be sent to the file as below
   //
-  AsciiTraceHelper ascii;
-  csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
+  if (tracing)
+    {
+      AsciiTraceHelper ascii;
+      csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
+    }
 
   //
   // Also configure some tcpdump traces; each interface will be traced.

@@ -47,8 +47,10 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("OpenFlowCsmaSwitchExample");
 
-bool verbose = false;
+bool verbose  = false;
 bool use_drop = false;
+bool tracing  = false;
+bool pcap     = true; 
 ns3::Time timeout = ns3::Seconds (0);
 
 bool
@@ -199,7 +201,7 @@ main (int argc, char *argv[])
   // and can be read by the "tcpdump -r" command (use "-tt" option to
   // display timestamps correctly)
   //
-  csma.EnablePcapAll ("openflow-switch", false);
+  csma.EnablePcapAll ("openflow-switch", true);
 
   //
   // Now, do the actual simulation.
