@@ -54,10 +54,9 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
 // If this value is false,then by default you won't see  verbose output in the terminal,
 // unless you specify the -v option
-bool verbose = false;
+bool verbose = true;
 bool use_drop = false;
-bool tracing  = false;
-bool pcap     = true;
+bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
 bool
@@ -360,19 +359,19 @@ main (int argc, char *argv[])
   * before the part where you create the application source/sink. 
   * Verify if your traffic generating nodes have routes to their destinations.
   */
-  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  
+  //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();   //不注释这句话不能生成各个追踪文件
+
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  //ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(0));
-  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
+  ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(0));
+  //ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(10.0));  
   
-  //UdpEchoClientHelper echoClient (Ipv4Address("192.168.4.1"),port); 
-  UdpEchoClientHelper echoClient (h2Interface.GetAddress(0) ,port);    // 192.168.5.1
+  UdpEchoClientHelper echoClient (Ipv4Address("192.168.1.1"),port); 
+  //UdpEchoClientHelper echoClient (h2Interface.GetAddress(0) ,port);    // 192.168.5.1
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
@@ -392,7 +391,11 @@ main (int argc, char *argv[])
   if (tracing)
     {
       AsciiTraceHelper ascii;
+      csma.EnablePcapAll("goal-topo");
       csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
+      phy.EnablePcap ("goal-topo-ap1", ap1Device);
+      phy.EnablePcap ("goal-topo-ap2", ap2Device);
+      phy.EnablePcap ("goal-topo-ap3", ap3Device);
     }
 
   //
@@ -403,7 +406,7 @@ main (int argc, char *argv[])
   // display timestamps correctly)
   // eg. tcpdump -nn -tt -r xxx.pcap
   //
-  csma.EnablePcapAll ("goal-topo", false);
+  //csma.EnablePcapAll ("goal-topo", false);
 
   AnimationInterface anim("goal-topo.xml");
   //
