@@ -293,19 +293,21 @@ main (int argc, char *argv[])
 
   if (use_drop)
     {
-      Ptr<ns3::ofi::DropController> controller1 = CreateObject<ns3::ofi::DropController> ();
-      switchHelper.Install (switchNode1, switch1Device, controller1);
-      Ptr<ns3::ofi::DropController> controller2 = CreateObject<ns3::ofi::DropController> ();
-      switchHelper.Install (switchNode2, switch2Device, controller2);
+      Ptr<ns3::ofi::DropController> controller = CreateObject<ns3::ofi::DropController> ();
+      switchHelper.Install (switchNode1, switch1Device, controller);
+      switchHelper.Install (switchNode2, switch2Device, controller);
+      //Ptr<ns3::ofi::DropController> controller2 = CreateObject<ns3::ofi::DropController> ();
+      //switchHelper.Install (switchNode2, switch2Device, controller2);
     }
   else
     {
-      Ptr<ns3::ofi::LearningController> controller1 = CreateObject<ns3::ofi::LearningController> ();
-      if (!timeout.IsZero ()) controller1->SetAttribute ("ExpirationTime", TimeValue (timeout));
-      switchHelper.Install (switchNode1, switch1Device, controller1);
-      Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
-      if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
-      switchHelper.Install (switchNode2, switch2Device, controller2);
+      Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
+      if (!timeout.IsZero ()) controller->SetAttribute ("ExpirationTime", TimeValue (timeout));
+      switchHelper.Install (switchNode1, switch1Device, controller);
+      switchHelper.Install (switchNode2, switch2Device, controller);
+      //Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
+      //if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
+      //switchHelper.Install (switchNode2, switch2Device, controller2);
     }
 
   // Add internet stack to the terminals
