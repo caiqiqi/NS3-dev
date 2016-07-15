@@ -25,7 +25,7 @@
 //           n1           n2
 //
 //
-//	and port number corresponds to node number, so port 0 is connected to n0, for example.
+// source: http://blog.csdn.net/u012174021/article/details/42320033
 
 #include <iostream>
 #include <fstream>

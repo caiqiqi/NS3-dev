@@ -28,7 +28,7 @@
 //            |      |
 //            m2     m1  
 //
-//and port number corresponds to node number, so port 0 is connected to n0, for example.
+// reference: http://blog.csdn.net/u012174021/article/details/42320033
 
 #include <iostream>
 #include <fstream>
@@ -127,26 +127,26 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Creating nodes-----");
  
   NodeContainer terminalsNode;
-  terminalsNode.Create (nTerminal);   //2 Nodes(H1 and H2)
+  terminalsNode.Create (nTerminal);   //2 Nodes(H1 and H2)-----node 0,1
 
   NodeContainer switchesNode;
-  switchesNode.Create (nSwitch);    //2 Nodes(Switch1 and Switch2)
+  switchesNode.Create (nSwitch);    //2 Nodes(Switch1 and Switch2)-----node 2,3
 
   NodeContainer wifiApsNode;
-  wifiApsNode.Create (nAp);    //3 Nodes(Ap1 Ap2 and Ap3)
+  wifiApsNode.Create (nAp);    //3 Nodes(Ap1 Ap2 and Ap3)-----node 4,5,6
   
   // Creating every  Ap's stations
   NodeContainer wifiAp1Node = wifiApsNode.Get(0);
   NodeContainer wifiAp1StaNodes;
-  wifiAp1StaNodes.Create(nAp1Station);
+  wifiAp1StaNodes.Create(nAp1Station);    // node 7,8,9
 
   NodeContainer wifiAp2Node = wifiApsNode.Get(1);
   NodeContainer wifiAp2StaNodes;
-  wifiAp2StaNodes.Create(nAp2Station);
+  wifiAp2StaNodes.Create(nAp2Station);    // node 10,11,12,13
 
   NodeContainer wifiAp3Node = wifiApsNode.Get(2);
   NodeContainer wifiAp3StaNodes;
-  wifiAp3StaNodes.Create(nAp3Station);
+  wifiAp3StaNodes.Create(nAp3Station);    //  node 14
 
   // The next bit of code constructs the wifi device and the interconnection channel between these wifi nodes.
   // First, we configure the PHY and channel helpers:
@@ -201,11 +201,11 @@ main (int argc, char *argv[])
   ap2Device   = wifi.Install(phy, mac, wifiAp2Node);
 
   //------- Network AP3-------
-  NetDeviceContainer stas3Devices, ap3Device;    // station devices in AP3 network, and the AP3 itself
+  NetDeviceContainer stas3Device, ap3Device;    // station devices in AP3 network, and the AP3 itself
   Ssid ssid3 = Ssid ("ssid-AP3");
   // We want to make sure that our stations don't perform active probing.
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
-  stas3Devices = wifi.Install(phy, mac, wifiAp3StaNodes );
+  stas3Device = wifi.Install(phy, mac, wifiAp3StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
   ap3Device   = wifi.Install(phy, mac, wifiAp3Node);
 
@@ -335,7 +335,7 @@ main (int argc, char *argv[])
   
   address.SetBase ("192.168.3.0", "255.255.255.0");
   Ipv4InterfaceContainer StaInterfaceC;
-  StaInterfaceC = address.Assign (stas3Devices);
+  StaInterfaceC = address.Assign (stas3Device);
   Ipv4InterfaceContainer ApInterfaceC;
   ApInterfaceC = address.Assign (ap3Device);
 
@@ -357,7 +357,7 @@ main (int argc, char *argv[])
   serverApps.Stop (Seconds(10.0));  
   
   UdpEchoClientHelper echoClient (Ipv4Address("192.168.4.1"),port);  
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (30));  
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (10));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
   ApplicationContainer clientApps = echoClient.Install(terminalsNode.Get(0));      // H1 is the client
