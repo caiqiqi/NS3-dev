@@ -424,8 +424,8 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(wifiApsNode.Get(0),5,20);      // Ap1----node 4
   anim.SetConstantPosition(wifiApsNode.Get(1),25,20);      // Ap2----node 5
   anim.SetConstantPosition(wifiApsNode.Get(2),40,20);      // Ap3----node 6
-  anim.SetConstantPosition(terminalsNode.Get(0),40,30);    // H1-----node 0
-  anim.SetConstantPosition(terminalsNode.Get(1),45,30);    // H2-----node 1
+  anim.SetConstantPosition(terminalsNode.Get(0),40,5);    // H1-----node 0
+  anim.SetConstantPosition(terminalsNode.Get(1),45,5);    // H2-----node 1
   anim.SetConstantPosition(wifiAp3StaNodes.Get(0),35,35);  //   -----node 14
 
   //
