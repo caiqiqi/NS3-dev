@@ -54,7 +54,7 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
 // If this value is false,then by default you won't see  verbose output in the terminal,
 // unless you specify the -v option
-bool verbose = true;
+bool verbose = false;
 bool use_drop = false;
 bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
@@ -188,7 +188,7 @@ main (int argc, char *argv[])
   Ssid ssid1 = Ssid ("ssid-AP1");
   // We want to make sure that our stations don't perform active probing.
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
-  stas1Device = wifi.Install(phy, mac, wifiAp1StaNodes );   // wifiAp1StaNodes指移动的设备节点，并不包括AP
+  stas1Device = wifi.Install(phy, mac, wifiAp1StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
   ap1Device   = wifi.Install(phy, mac, wifiAp1Node);
 
@@ -219,20 +219,30 @@ main (int argc, char *argv[])
   */
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
-    "MinX",      DoubleValue (0.0),
-    "MinY",      DoubleValue (0.0),
-    "DeltaX",    DoubleValue (5.0),
-    "DeltaY",    DoubleValue (10.0),
-    "GridWidth", UintegerValue(4),
+    "MinX",      DoubleValue (0),
+    "MinY",      DoubleValue (25),
+    "DeltaX",    DoubleValue (5),
+    "DeltaY",    DoubleValue (10),
+    "GridWidth", UintegerValue(3),
     "LayoutType",StringValue ("RowFirst")
-    );
+    );    // "GridWidth", UintegerValue(3),
   // This code tells the mobility helper to use a two-dimensional grid to initially place the STA nodes.
   // feel free to refer to `ns3::RandomWalk2dMobilityModel` which has the nodes move in a random direction
   // at ta random speed around inside a bounding box.
   mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
     "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
-  // We now tell the MobilityHelper to install the mobility models on the STA nodes.
+
   mobility.Install (wifiAp1StaNodes);
+  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+    "MinX",      DoubleValue (20),
+    "MinY",      DoubleValue (25),
+    "DeltaX",    DoubleValue (5),
+    "DeltaY",    DoubleValue (10),
+    "GridWidth", UintegerValue(3),
+    "LayoutType",StringValue ("RowFirst")
+    );    // "GridWidth", UintegerValue(3),
+  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
+    "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
   mobility.Install (wifiAp2StaNodes);
   
 
@@ -249,7 +259,7 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO ("-----Building Topology------");
   CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", DataRateValue (5000000));   // 5M bandwidth
+  csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
 
   // Create the csma links, from each AP to the switch
@@ -365,12 +375,12 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(0));
+  ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(nAp1Station-1));
   //ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(10.0));  
   
-  UdpEchoClientHelper echoClient (Ipv4Address("192.168.1.1"),port); 
+  UdpEchoClientHelper echoClient (StaInterfaceA.GetAddress(nAp1Station-1),port); 
   //UdpEchoClientHelper echoClient (h2Interface.GetAddress(0) ,port);    // 192.168.5.1
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
@@ -408,7 +418,16 @@ main (int argc, char *argv[])
   //
   //csma.EnablePcapAll ("goal-topo", false);
 
-  AnimationInterface anim("goal-topo.xml");
+  AnimationInterface anim ("goal-topo.xml");
+  anim.SetConstantPosition(switchNode1,15,10);             // s1-----node 2
+  anim.SetConstantPosition(switchNode2,45,10);             // s2-----node 3
+  anim.SetConstantPosition(wifiApsNode.Get(0),5,20);      // Ap1----node 4
+  anim.SetConstantPosition(wifiApsNode.Get(1),25,20);      // Ap2----node 5
+  anim.SetConstantPosition(wifiApsNode.Get(2),40,20);      // Ap3----node 6
+  anim.SetConstantPosition(terminalsNode.Get(0),40,30);    // H1-----node 0
+  anim.SetConstantPosition(terminalsNode.Get(1),45,30);    // H2-----node 1
+  anim.SetConstantPosition(wifiAp3StaNodes.Get(0),35,35);  //   -----node 14
+
   //
   // Now, do the actual simulation.
   //
