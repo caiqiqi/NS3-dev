@@ -222,7 +222,7 @@ main (int argc, char *argv[])
     "MinX",      DoubleValue (0),
     "MinY",      DoubleValue (25),
     "DeltaX",    DoubleValue (5),
-    "DeltaY",    DoubleValue (10),
+    "DeltaY",    DoubleValue (5),
     "GridWidth", UintegerValue(3),
     "LayoutType",StringValue ("RowFirst")
     );    // "GridWidth", UintegerValue(3),
@@ -237,7 +237,7 @@ main (int argc, char *argv[])
     "MinX",      DoubleValue (20),
     "MinY",      DoubleValue (25),
     "DeltaX",    DoubleValue (5),
-    "DeltaY",    DoubleValue (10),
+    "DeltaY",    DoubleValue (5),
     "GridWidth", UintegerValue(3),
     "LayoutType",StringValue ("RowFirst")
     );    // "GridWidth", UintegerValue(3),
@@ -263,7 +263,7 @@ main (int argc, char *argv[])
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
 
   // Create the csma links, from each AP to the switch
-  NetDeviceContainer terminal1Device, terminal2Device;
+  NetDeviceContainer terminalsDevice, terminal2Device;
   NetDeviceContainer switch1Device, switch2Device;
   NetDeviceContainer link;
 
@@ -288,12 +288,14 @@ main (int argc, char *argv[])
 
 
   //Connect terminal1 and terminal2 to ofSwitch2  
-  link = csma.Install(NodeContainer(terminalsNode.Get(0),switchesNode.Get(1)));
-  terminal1Device.Add(link.Get(0));
-  switch2Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(terminalsNode.Get(1),switchesNode.Get(1)));
-  terminal2Device.Add(link.Get(0));
-  switch2Device.Add(link.Get(1));
+  for (int i = 0; i < 2; i++)
+    {
+      link = csma.Install(NodeContainer(terminalsNode.Get(i), switchesNode.Get(1)));
+      terminalsDevice.Add(link.Get(0));
+      switch2Device.Add(link.Get(1));
+
+    }
+  
 
 
   //Create the switch netdevice,which will do the packet switching
@@ -353,14 +355,10 @@ main (int argc, char *argv[])
   StaInterfaceC = address.Assign (stas3Device);
   
 
-  // for H1
+  // for H1 and H2
   address.SetBase ("192.168.4.0", "255.255.255.0");
-  Ipv4InterfaceContainer h1Interface;
-  h1Interface = address.Assign (terminal1Device);
-  // for H2
-  address.SetBase ("192.168.5.0", "255.255.255.0");
-  Ipv4InterfaceContainer h2Interface;
-  h2Interface = address.Assign (terminal2Device);
+  Ipv4InterfaceContainer h1h2Interface;
+  h1h2Interface = address.Assign (terminalsDevice);   // H1, H2: 192.168.23.4.x
 
 
   /*
