@@ -196,7 +196,7 @@ main (int argc, char *argv[])
   NetDeviceContainer stas2Device, ap2Device;    // station devices in AP2 network, and the AP2 itself
   Ssid ssid2 = Ssid ("ssid-AP2");
   // We want to make sure that our stations don't perform active probing.
-  mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
+  mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (), "ActiveProbing", BooleanValue (false));
   stas2Device = wifi.Install(phy, mac, wifiAp2StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
   ap2Device   = wifi.Install(phy, mac, wifiAp2Node);
@@ -335,30 +335,32 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Assigning IP Addresses.-----");
   Ipv4AddressHelper address;
   address.SetBase ("192.168.1.0", "255.255.255.0");
+
   Ipv4InterfaceContainer ApInterfaceA;    
-  ApInterfaceA = address.Assign (ap1Device);    // Ap1: 192.168.1.1
+  ApInterfaceA = address.Assign (ap1Device);
+  Ipv4InterfaceContainer ApInterfaceB;
+  ApInterfaceB = address.Assign (ap2Device);
+  Ipv4InterfaceContainer ApInterfaceC;
+  ApInterfaceC = address.Assign (ap3Device);
+
   Ipv4InterfaceContainer StaInterfaceA;
   StaInterfaceA = address.Assign (stas1Device);
   
   
-  address.SetBase ("192.168.2.0", "255.255.255.0");
-  Ipv4InterfaceContainer ApInterfaceB;
-  ApInterfaceB = address.Assign (ap2Device);    // Ap2: 192.168.2.1
+  //address.SetBase ("192.168.1.0", "255.255.255.0");
+  
   Ipv4InterfaceContainer StaInterfaceB;
   StaInterfaceB = address.Assign (stas2Device);
   
+  //address.SetBase ("192.168.1.0", "255.255.255.0");
   
-  address.SetBase ("192.168.3.0", "255.255.255.0");
-  Ipv4InterfaceContainer ApInterfaceC;
-  ApInterfaceC = address.Assign (ap3Device);    // Ap3: 192.168.3.1
   Ipv4InterfaceContainer StaInterfaceC;
   StaInterfaceC = address.Assign (stas3Device);
-  
 
   // for H1 and H2
-  address.SetBase ("192.168.4.0", "255.255.255.0");
+  //address.SetBase ("192.168.1.0", "255.255.255.0");
   Ipv4InterfaceContainer h1h2Interface;
-  h1h2Interface = address.Assign (terminalsDevice);   // H1, H2: 192.168.23.4.x
+  h1h2Interface = address.Assign (terminalsDevice);
 
 
   /*
@@ -373,13 +375,13 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(nAp1Station-1));
-  //ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
+  //ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(nAp1Station-1));
+  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(10.0));  
   
-  UdpEchoClientHelper echoClient (StaInterfaceA.GetAddress(nAp1Station-1),port); 
-  //UdpEchoClientHelper echoClient (h2Interface.GetAddress(0) ,port);    // 192.168.5.1
+  //UdpEchoClientHelper echoClient (StaInterfaceA.GetAddress(nAp1Station-1),port); 
+  UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
