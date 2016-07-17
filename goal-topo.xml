@@ -36,9 +36,11 @@
 <nonp2plinkproperties id="2" ipv4Address="0.0.0.0~00:00:00:00:00:11" channelType="ns3::CsmaChannel" />
 <nonp2plinkproperties id="2" ipv4Address="0.0.0.0~00:00:00:00:00:13" channelType="ns3::CsmaChannel" />
 <nonp2plinkproperties id="2" ipv4Address="0.0.0.0~00:00:00:00:00:0c" channelType="ns3::BridgeChannel" />
+<nonp2plinkproperties id="2" ipv4Address="0.0.0.0~00:00:00:00:00:0c" channelType="ns3::BridgeChannel" />
 <nonp2plinkproperties id="3" ipv4Address="0.0.0.0~00:00:00:00:00:0d" channelType="ns3::CsmaChannel" />
 <nonp2plinkproperties id="3" ipv4Address="0.0.0.0~00:00:00:00:00:15" channelType="ns3::CsmaChannel" />
 <nonp2plinkproperties id="3" ipv4Address="0.0.0.0~00:00:00:00:00:17" channelType="ns3::CsmaChannel" />
+<nonp2plinkproperties id="3" ipv4Address="0.0.0.0~00:00:00:00:00:0d" channelType="ns3::BridgeChannel" />
 <nonp2plinkproperties id="3" ipv4Address="0.0.0.0~00:00:00:00:00:0d" channelType="ns3::BridgeChannel" />
 <nonp2plinkproperties id="4" ipv4Address="192.168.1.1~00:00:00:00:00:04" channelType="ns3::YansWifiChannel" />
 <nonp2plinkproperties id="4" ipv4Address="192.168.1.2~00:00:00:00:00:0e" channelType="ns3::CsmaChannel" />

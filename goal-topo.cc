@@ -296,7 +296,13 @@ main (int argc, char *argv[])
 
     }
   
+  // ======================================================================
+  // Install bridging code on each switch
+  // ----------------------------------------------------------------------
+  BridgeHelper bridge;
 
+  bridge.Install (switchesNode.Get(0), switch1Device);
+  bridge.Install (switchesNode.Get(1), switch2Device);
 
   //Create the switch netdevice,which will do the packet switching
   Ptr<Node> switchNode1 = switchesNode.Get (0);
