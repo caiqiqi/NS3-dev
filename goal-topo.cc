@@ -196,7 +196,7 @@ main (int argc, char *argv[])
   NetDeviceContainer stas2Device, ap2Device;    // station devices in AP2 network, and the AP2 itself
   Ssid ssid2 = Ssid ("ssid-AP2");
   // We want to make sure that our stations don't perform active probing.
-  mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (), "ActiveProbing", BooleanValue (false));
+  mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
   stas2Device = wifi.Install(phy, mac, wifiAp2StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
   ap2Device   = wifi.Install(phy, mac, wifiAp2Node);
@@ -333,34 +333,53 @@ main (int argc, char *argv[])
   //TODO
 
   NS_LOG_INFO ("-----Assigning IP Addresses.-----");
-  Ipv4AddressHelper address;
-  address.SetBase ("192.168.1.0", "255.255.255.0");
+  Ipv4AddressHelper csmaIpAddress;
+  csmaIpAddress.SetBase ("192.168.1.0", "255.255.255.0");
 
+  // for Ap1,Ap2 and Ap3
   Ipv4InterfaceContainer ApInterfaceA;    
-  ApInterfaceA = address.Assign (ap1Device);
+  ApInterfaceA = csmaIpAddress.Assign (ap1Device);
   Ipv4InterfaceContainer ApInterfaceB;
-  ApInterfaceB = address.Assign (ap2Device);
+  ApInterfaceB = csmaIpAddress.Assign (ap2Device);
   Ipv4InterfaceContainer ApInterfaceC;
-  ApInterfaceC = address.Assign (ap3Device);
+  ApInterfaceC = csmaIpAddress.Assign (ap3Device);
+  // for H1 and H2
+  Ipv4InterfaceContainer h1h2Interface;
+  h1h2Interface = csmaIpAddress.Assign (terminalsDevice);
 
-  Ipv4InterfaceContainer StaInterfaceA;
-  StaInterfaceA = address.Assign (stas1Device);
+
+  // 
+  Ipv4AddressHelper ap1IpAddress;
+  ap1IpAddress.SetBase ("10.0.1.0", "255.255.255.0");
+  Ipv4InterfaceContainer apInterfaceA;
+  Ipv4InterfaceContainer staInterfaceA;
+  apInterfaceA  = ap1IpAddress.Assign (ap1Device);    // 可同时给一个节点配置多个IP
+  staInterfaceA = ap1IpAddress.Assign (stas1Device);
+
+  Ipv4AddressHelper ap2IpAddress;
+  ap2IpAddress.SetBase ("10.0.2.0", "255.255.255.0");
+  Ipv4InterfaceContainer apInterfaceB;
+  Ipv4InterfaceContainer staInterfaceB;
+  apInterfaceB  = ap2IpAddress.Assign (ap2Device);
+  staInterfaceB = ap2IpAddress.Assign (stas2Device);
+
+  Ipv4AddressHelper ap3IpAddress;
+  ap1IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
+  Ipv4InterfaceContainer apInterfaceC;
+  Ipv4InterfaceContainer staInterfaceC;
+  apInterfaceC  = ap3IpAddress.Assign (ap3Device);
+  staInterfaceC = ap3IpAddress.Assign (stas3Device);
   
   
-  //address.SetBase ("192.168.1.0", "255.255.255.0");
+  //address.SetBase ("10.0.1.0", "255.255.255.0");
   
   Ipv4InterfaceContainer StaInterfaceB;
   StaInterfaceB = address.Assign (stas2Device);
   
-  //address.SetBase ("192.168.1.0", "255.255.255.0");
+  //address.SetBase ("10.0.2.0", "255.255.255.0");
   
   Ipv4InterfaceContainer StaInterfaceC;
   StaInterfaceC = address.Assign (stas3Device);
-
-  // for H1 and H2
-  //address.SetBase ("192.168.1.0", "255.255.255.0");
-  Ipv4InterfaceContainer h1h2Interface;
-  h1h2Interface = address.Assign (terminalsDevice);
 
 
   /*
@@ -380,7 +399,7 @@ main (int argc, char *argv[])
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(10.0));  
   
-  //UdpEchoClientHelper echoClient (StaInterfaceA.GetAddress(nAp1Station-1),port); 
+  //UdpEchoClientHelper echoClient (staInterfaceA.GetAddress(nAp1Station-1),port); 
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
