@@ -299,16 +299,17 @@ main (int argc, char *argv[])
   // ======================================================================
   // Install bridging code on each switch
   // ----------------------------------------------------------------------
-  BridgeHelper bridge;
+  //BridgeHelper bridge;
 
-  bridge.Install (switchesNode.Get(0), switch1Device);
-  bridge.Install (switchesNode.Get(1), switch2Device);
+  //bridge.Install (switchesNode.Get(0), switch1Device);
+  //bridge.Install (switchesNode.Get(1), switch2Device);
 
   //Create the switch netdevice,which will do the packet switching
   Ptr<Node> switchNode1 = switchesNode.Get (0);
   Ptr<Node> switchNode2 = switchesNode.Get (1);
   
   OpenFlowSwitchHelper switchHelper;
+  // SwitchHelper is a subclass of BridgeHelper
 
   if (use_drop)
     {
@@ -343,30 +344,41 @@ main (int argc, char *argv[])
   address.SetBase ("192.168.1.0", "255.255.255.0");
   Ipv4InterfaceContainer ApInterfaceA;    
   ApInterfaceA = address.Assign (ap1Device);    // Ap1: 192.168.1.1
-  Ipv4InterfaceContainer StaInterfaceA;
-  StaInterfaceA = address.Assign (stas1Device);
+  
   
   
   address.SetBase ("192.168.2.0", "255.255.255.0");
   Ipv4InterfaceContainer ApInterfaceB;
   ApInterfaceB = address.Assign (ap2Device);    // Ap2: 192.168.2.1
-  Ipv4InterfaceContainer StaInterfaceB;
-  StaInterfaceB = address.Assign (stas2Device);
+  
   
   
   address.SetBase ("192.168.3.0", "255.255.255.0");
   Ipv4InterfaceContainer ApInterfaceC;
   ApInterfaceC = address.Assign (ap3Device);    // Ap3: 192.168.3.1
-  Ipv4InterfaceContainer StaInterfaceC;
-  StaInterfaceC = address.Assign (stas3Device);
   
-
+  
   // for H1 and H2
   address.SetBase ("192.168.4.0", "255.255.255.0");
   Ipv4InterfaceContainer h1h2Interface;
   h1h2Interface = address.Assign (terminalsDevice);   // H1, H2: 192.168.23.4.x
 
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
+  // I moved the station nodes separated from the AP so that I could
+  // use `Ipv4GlobalRoutingHelper::PopulateRoutingTables ();`
+  Ipv4AddressHelper addressA;
+  addressA.SetBase ("192.168.1.2", "255.255.255.0");
+  Ipv4InterfaceContainer StaInterfaceA;
+  StaInterfaceA = addressA.Assign (stas1Device);
+  Ipv4AddressHelper addressB;
+  addressB.SetBase ("192.168.2.2", "255.255.255.0");
+  Ipv4InterfaceContainer StaInterfaceB;
+  StaInterfaceB = addressB.Assign (stas2Device);
+  Ipv4AddressHelper addressC;
+  addressC.SetBase ("192.168.3.2", "255.255.255.0");
+  Ipv4InterfaceContainer StaInterfaceC;
+  StaInterfaceC = addressC.Assign (stas3Device);
   /*
   * Empty pcap files usually come up because no packets ever leave any of the nodes and 
   * onto the channel(s). Try moving the "Ipv4GlobalRoutingHelper::PopulateRoutingTables();" line 
@@ -389,7 +401,7 @@ main (int argc, char *argv[])
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));  // optional:wifiAp3StaNodes
+  ApplicationContainer clientApps = echoClient.Install(wifiApsNode.Get(0));  // optional:wifiAp3StaNodes
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(10.0));
   

@@ -39,6 +39,8 @@
 #include "ns3/log.h"
 #include "ns3/bridge-helper.h"
 
+#include "ns3/netanim-module.h"
+
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("OpenFlowCsmaSwitch");
@@ -210,7 +212,13 @@ main (int argc, char *argv[])
   // display timestamps correctly)
   //
   csma.EnablePcapAll ("openflow-2-switches", false);
-
+  AnimationInterface anim("openflow-2-switches.xml");
+  anim.SetConstantPosition(switchNode1,5,0);        
+  anim.SetConstantPosition(switchNode2,10,0);           
+  anim.SetConstantPosition(terminals.Get(0),0,0);  
+  anim.SetConstantPosition(terminals.Get(1),5,5);   
+  anim.SetConstantPosition(terminals.Get(2),10,5);
+  anim.SetConstantPosition(terminals.Get(3),15,0);
   //
   // Now, do the actual simulation.
   //
