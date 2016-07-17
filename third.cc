@@ -193,14 +193,14 @@ main (int argc, char *argv[])
     }
   // for animation
   AnimationInterface anim("third.xml");
-  anim.SetConstantPostion(p2pNodes.Get(0), 15, 0);
-  anim.SetConstantPostion(p2pNodes.Get(1), 30, 0);
-  anim.SetConstantPostion(csmaNodes.Get(1), 35, 0);
-  anim.SetConstantPostion(csmaNodes.Get(2), 40, 0);
-  anim.SetConstantPostion(csmaNodes.Get(3), 45, 0);
-  anim.SetConstantPostion(wifiStaNodes.Get(0), 0, 0);
-  anim.SetConstantPostion(wifiStaNodes.Get(1), 5, 0);
-  anim.SetConstantPostion(wifiStaNodes.Get(2), 10, 0);
+  anim.SetConstantPosition(p2pNodes.Get(0), 15, 0);
+  anim.SetConstantPosition(p2pNodes.Get(1), 30, 0);
+  anim.SetConstantPosition(csmaNodes.Get(1), 35, 0);
+  anim.SetConstantPosition(csmaNodes.Get(2), 40, 0);
+  anim.SetConstantPosition(csmaNodes.Get(3), 45, 0);
+  anim.SetConstantPosition(wifiStaNodes.Get(0), 0, 0);
+  anim.SetConstantPosition(wifiStaNodes.Get(1), 5, 0);
+  anim.SetConstantPosition(wifiStaNodes.Get(2), 10, 0);
 
   //anim.EnablePacketMetadata();
 
