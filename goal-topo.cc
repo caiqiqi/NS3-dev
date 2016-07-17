@@ -379,17 +379,17 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(nAp1Station-1));
+  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   //ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(10.0));  
   
-  UdpEchoClientHelper echoClient (StaInterfaceA.GetAddress(nAp1Station-1),port); 
+  UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1),port); 
   //UdpEchoClientHelper echoClient (h2Interface.GetAddress(0) ,port);    // 192.168.5.1
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));
+  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));  // optional:wifiAp3StaNodes
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(10.0));
   
