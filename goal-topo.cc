@@ -133,19 +133,19 @@ main (int argc, char *argv[])
   NodeContainer switchesNode;
   switchesNode.Create (nSwitch);    //2 Nodes(Switch1 and Switch2)-----node 2,3
 
-  NodeContainer wifiApsNode;
-  wifiApsNode.Create (nAp);    //3 Nodes(Ap1 Ap2 and Ap3)-----node 4,5,6
+  NodeContainer apsNode;
+  apsNode.Create (nAp);    //3 Nodes(Ap1 Ap2 and Ap3)-----node 4,5,6
   
   // Creating every  Ap's stations
-  NodeContainer wifiAp1Node = wifiApsNode.Get(0);
+  NodeContainer ap1Node = apsNode.Get(0);
   NodeContainer wifiAp1StaNodes;
   wifiAp1StaNodes.Create(nAp1Station);    // node 7,8,9
 
-  NodeContainer wifiAp2Node = wifiApsNode.Get(1);
+  NodeContainer ap2Node = apsNode.Get(1);
   NodeContainer wifiAp2StaNodes;
   wifiAp2StaNodes.Create(nAp2Station);    // node 10,11,12,13
 
-  NodeContainer wifiAp3Node = wifiApsNode.Get(2);
+  NodeContainer ap3Node = apsNode.Get(2);
   NodeContainer wifiAp3StaNodes;
   wifiAp3StaNodes.Create(nAp3Station);    //  node 14
 
@@ -184,31 +184,31 @@ main (int argc, char *argv[])
   // we can invoke our now-familiar `Install` method to create the wifi devices of these stations:
   
   //------- Network AP1-------
-  NetDeviceContainer stas1Device, ap1Device;    // station devices in AP1 network, and the AP1 itself
+  NetDeviceContainer wifiSta1Device, wifiAp1Device;    // station devices in AP1 network, and the AP1 itself
   Ssid ssid1 = Ssid ("ssid-AP1");
   // We want to make sure that our stations don't perform active probing.
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
-  stas1Device = wifi.Install(phy, mac, wifiAp1StaNodes );
+  wifiSta1Device = wifi.Install(phy, mac, wifiAp1StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
-  ap1Device   = wifi.Install(phy, mac, wifiAp1Node);
+  wifiAp1Device   = wifi.Install(phy, mac, ap1Node);
 
   //------- Network AP2-------
-  NetDeviceContainer stas2Device, ap2Device;    // station devices in AP2 network, and the AP2 itself
+  NetDeviceContainer wifiSta2Device, wifiAp2Device;    // station devices in AP2 network, and the AP2 itself
   Ssid ssid2 = Ssid ("ssid-AP2");
   // We want to make sure that our stations don't perform active probing.
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
-  stas2Device = wifi.Install(phy, mac, wifiAp2StaNodes );
+  wifiSta2Device = wifi.Install(phy, mac, wifiAp2StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
-  ap2Device   = wifi.Install(phy, mac, wifiAp2Node);
+  wifiAp2Device   = wifi.Install(phy, mac, ap2Node);
 
   //------- Network AP3-------
-  NetDeviceContainer stas3Device, ap3Device;    // station devices in AP3 network, and the AP3 itself
+  NetDeviceContainer wifiSta3Device, wifiAp3Device;    // station devices in AP3 network, and the AP3 itself
   Ssid ssid3 = Ssid ("ssid-AP3");
   // We want to make sure that our stations don't perform active probing.
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
-  stas3Device = wifi.Install(phy, mac, wifiAp3StaNodes );
+  wifiSta3Device = wifi.Install(phy, mac, wifiAp3StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
-  ap3Device   = wifi.Install(phy, mac, wifiAp3Node);
+  wifiAp3Device   = wifi.Install(phy, mac, ap3Node);
 
   /* We have configured Wifi for all of our STA nodes, and now we need to configure the AP (access point) node.
      We begin this process by changing the default `Attributes` of the `NqosWifiMacHelper` to reflect the requirements of the AP.
@@ -250,7 +250,7 @@ main (int argc, char *argv[])
   // We want the AP to remain in a fixed position during the simulation
   mobility2.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   // only stations in AP1 and AP2 is mobile, the only station in AP3 is not mobile.
-  mobility2.Install (wifiApsNode);
+  mobility2.Install (apsNode);
   mobility2.Install (wifiAp3StaNodes);
   mobility2.Install (switchesNode);
   mobility2.Install (terminalsNode);
@@ -262,8 +262,9 @@ main (int argc, char *argv[])
   csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
 
-  // Create the csma links, from each AP to the switch
-  NetDeviceContainer terminalsDevice, terminal2Device;
+  // Create the csma links, from each AP & terminals to the switch
+  NetDeviceContainer terminalsDevice;
+  NetDeviceContainer csmaAp1Device, csmaAp2Device, csmaAp3Device;
   NetDeviceContainer switch1Device, switch2Device;
   NetDeviceContainer link;
 
@@ -274,16 +275,16 @@ main (int argc, char *argv[])
   
   //Connect AP1, AP2 and AP3 to ofSwitch1  
   // the AP[i] connect to Switch1,namely switchesNode.Get(0)
-  link = csma.Install(NodeContainer(wifiApsNode.Get(0),switchesNode.Get(0)));
+  link = csma.Install(NodeContainer(apsNode.Get(0),switchesNode.Get(0)));
   // link is a list, including the two nodes
   // add one to apDevice{A,B,C}, the other to switch1Device
-  ap1Device.Add(link.Get(0));  
+  csmaAp1Device.Add(link.Get(0));  
   switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(wifiApsNode.Get(1),switchesNode.Get(0)));
-  ap2Device.Add(link.Get(0));  
+  link = csma.Install(NodeContainer(apsNode.Get(1),switchesNode.Get(0)));
+  csmaAp2Device.Add(link.Get(0));  
   switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(wifiApsNode.Get(2),switchesNode.Get(0)));
-  ap3Device.Add(link.Get(0));
+  link = csma.Install(NodeContainer(apsNode.Get(2),switchesNode.Get(0)));
+  csmaAp3Device.Add(link.Get(0));
   switch1Device.Add(link.Get(1));
 
 
@@ -326,7 +327,8 @@ main (int argc, char *argv[])
   // Add internet stack to the terminals
   InternetStackHelper internet;
   internet.Install (terminalsNode);
-  internet.Install (wifiApsNode);
+
+  internet.Install (apsNode);
   internet.Install (wifiAp1StaNodes);
   internet.Install (wifiAp2StaNodes);
   internet.Install (wifiAp3StaNodes);
@@ -338,11 +340,11 @@ main (int argc, char *argv[])
 
   // for Ap1,Ap2 and Ap3
   Ipv4InterfaceContainer ApInterfaceA;    
-  ApInterfaceA = csmaIpAddress.Assign (ap1Device);
+  ApInterfaceA = csmaIpAddress.Assign (csmaAp1Device);
   Ipv4InterfaceContainer ApInterfaceB;
-  ApInterfaceB = csmaIpAddress.Assign (ap2Device);
+  ApInterfaceB = csmaIpAddress.Assign (csmaAp2Device);
   Ipv4InterfaceContainer ApInterfaceC;
-  ApInterfaceC = csmaIpAddress.Assign (ap3Device);
+  ApInterfaceC = csmaIpAddress.Assign (csmaAp3Device);
   // for H1 and H2
   Ipv4InterfaceContainer h1h2Interface;
   h1h2Interface = csmaIpAddress.Assign (terminalsDevice);
@@ -353,33 +355,22 @@ main (int argc, char *argv[])
   ap1IpAddress.SetBase ("10.0.1.0", "255.255.255.0");
   Ipv4InterfaceContainer apInterfaceA;
   Ipv4InterfaceContainer staInterfaceA;
-  apInterfaceA  = ap1IpAddress.Assign (ap1Device);    // 可同时给一个节点配置多个IP
-  staInterfaceA = ap1IpAddress.Assign (stas1Device);
+  apInterfaceA  = ap1IpAddress.Assign (wifiAp1Device);    // 可同时给一个节点配置多个IP
+  staInterfaceA = ap1IpAddress.Assign (wifiSta1Device);
 
   Ipv4AddressHelper ap2IpAddress;
   ap2IpAddress.SetBase ("10.0.2.0", "255.255.255.0");
   Ipv4InterfaceContainer apInterfaceB;
   Ipv4InterfaceContainer staInterfaceB;
-  apInterfaceB  = ap2IpAddress.Assign (ap2Device);
-  staInterfaceB = ap2IpAddress.Assign (stas2Device);
+  apInterfaceB  = ap2IpAddress.Assign (wifiAp2Device);
+  staInterfaceB = ap2IpAddress.Assign (wifiSta2Device);
 
   Ipv4AddressHelper ap3IpAddress;
   ap1IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
   Ipv4InterfaceContainer apInterfaceC;
   Ipv4InterfaceContainer staInterfaceC;
-  apInterfaceC  = ap3IpAddress.Assign (ap3Device);
-  staInterfaceC = ap3IpAddress.Assign (stas3Device);
-  
-  
-  //address.SetBase ("10.0.1.0", "255.255.255.0");
-  
-  Ipv4InterfaceContainer StaInterfaceB;
-  StaInterfaceB = address.Assign (stas2Device);
-  
-  //address.SetBase ("10.0.2.0", "255.255.255.0");
-  
-  Ipv4InterfaceContainer StaInterfaceC;
-  StaInterfaceC = address.Assign (stas3Device);
+  apInterfaceC  = ap3IpAddress.Assign (wifiAp3Device);
+  staInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
 
 
   /*
@@ -440,9 +431,9 @@ main (int argc, char *argv[])
   AnimationInterface anim ("goal-topo.xml");
   anim.SetConstantPosition(switchNode1,15,10);             // s1-----node 2
   anim.SetConstantPosition(switchNode2,45,10);             // s2-----node 3
-  anim.SetConstantPosition(wifiApsNode.Get(0),5,20);      // Ap1----node 4
-  anim.SetConstantPosition(wifiApsNode.Get(1),25,20);      // Ap2----node 5
-  anim.SetConstantPosition(wifiApsNode.Get(2),40,20);      // Ap3----node 6
+  anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 4
+  anim.SetConstantPosition(apsNode.Get(1),25,20);      // Ap2----node 5
+  anim.SetConstantPosition(apsNode.Get(2),40,20);      // Ap3----node 6
   anim.SetConstantPosition(terminalsNode.Get(0),40,5);    // H1-----node 0
   anim.SetConstantPosition(terminalsNode.Get(1),45,5);    // H2-----node 1
   anim.SetConstantPosition(wifiAp3StaNodes.Get(0),35,35);  //   -----node 14
