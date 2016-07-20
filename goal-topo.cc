@@ -395,7 +395,7 @@ main (int argc, char *argv[])
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));
+  ApplicationContainer clientApps = echoClient.Install(terminalsNode.Get(0));    //wifiAp3StaNodes.Get(0)
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(10.0));
   
@@ -413,9 +413,12 @@ main (int argc, char *argv[])
       AsciiTraceHelper ascii;
       csma.EnablePcapAll("goal-topo");
       csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
-      phy.EnablePcap ("goal-topo-ap1", ap1Device);
-      phy.EnablePcap ("goal-topo-ap2", ap2Device);
-      phy.EnablePcap ("goal-topo-ap3", ap3Device);
+      phy.EnablePcap ("goal-topo-ap1-wifi", wifiAp1Device);
+      phy.EnablePcap ("goal-topo-ap2-wifi", wifiAp2Device);
+      phy.EnablePcap ("goal-topo-ap3-wifi", wifiAp3Device);
+      phy.EnablePcap ("goal-topo-ap1-csma", csmaAp1Device);
+      phy.EnablePcap ("goal-topo-ap2-csma", csmaAp2Device);
+      phy.EnablePcap ("goal-topo-ap3-csma", csmaAp3Device);
     }
 
   //
