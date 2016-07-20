@@ -300,7 +300,7 @@ main (int argc, char *argv[])
   mobility.Install (wifiAp1StaNodes);
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (20),
-    "MinY",      DoubleValue (25),
+    "MinY",      DoubleValue (40),
     "DeltaX",    DoubleValue (5),
     "DeltaY",    DoubleValue (5),
     "GridWidth", UintegerValue(3),
@@ -373,6 +373,10 @@ main (int argc, char *argv[])
   Ipv4InterfaceContainer staInterfaceA;
   apInterfaceA  = ap1IpAddress.Assign (wifiAp1Device);
   staInterfaceA = ap1IpAddress.Assign (wifiSta1Device);
+  // debug
+  Ipv4Address gdb_address = apInterfaceA.GetAddress(0);
+  gdb_address.Print(std::cout);
+  //std::cout << gdb_address << std::endl;
 
   Ipv4AddressHelper ap2IpAddress;
   ap2IpAddress.SetBase ("10.0.2.0", "255.255.255.0");
@@ -452,7 +456,7 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(switchNode2,45,10);             // s2-----node 1
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
   anim.SetConstantPosition(apsNode.Get(1),20,20);      // Ap2----node 3
-  anim.SetConstantPosition(apsNode.Get(2),35,20);      // Ap3----node 4
+  anim.SetConstantPosition(apsNode.Get(2),35,35);      // Ap3----node 4
   anim.SetConstantPosition(terminalsNode.Get(0),40,25);    // H1-----node 5
   anim.SetConstantPosition(terminalsNode.Get(1),45,25);    // H2-----node 6
   anim.SetConstantPosition(wifiAp3StaNodes.Get(0),35,35);  //   -----node 14
