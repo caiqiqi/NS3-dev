@@ -121,38 +121,104 @@ main (int argc, char *argv[])
       LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);  
       LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO); 
     }
+  
+
+  //----- init Helpers -----
+  CsmaHelper csma;
+  csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
+  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
+  YansWifiChannelHelper channel = YansWifiChannelHelper::Default();
+  YansWifiPhyHelper phy = YansWifiPhyHelper::Default();
+  phy.SetChannel (channel.Create() );
+  WifiHelper wifi;
+  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
+  // SetRemoteStationManager其实是设置了速率控制算法。这里的速率在tutorial中也没有说清楚，我觉得应该是wifi信道的数据传播速率。
+  NqosWifiMacHelper mac = NqosWifiMacHelper::Default();
 
   //
   // Explicitly create the nodes required by the topology (shown above).
   //
   NS_LOG_INFO ("-----Creating nodes-----");
  
-  NodeContainer terminalsNode;
-  terminalsNode.Create (nTerminal);   //2 Nodes(H1 and H2)-----node 0,1
 
   NodeContainer switchesNode;
-  switchesNode.Create (nSwitch);    //2 Nodes(Switch1 and Switch2)-----node 2,3
-
-  NodeContainer apsNode;
-  apsNode.Create (nAp);    //3 Nodes(Ap1 Ap2 and Ap3)-----node 4,5,6
+  switchesNode.Create (nSwitch);    //2 Nodes(switch1 and switch2)-----node 0,1
   
+  NodeContainer apsNode;
+  apsNode.Create (nAp);             //3 Nodes(Ap1 Ap2 and Ap3)-----node 2,3,4
+
+  NodeContainer terminalsNode;
+  terminalsNode.Create (nTerminal); //2 Nodes(terminal1 and terminal2)-----node 5,6
+  
+  NodeContainer csmaNodes;
+  csmaNodes.Add(apsNode);         // APs index : 0,1,2
+  csmaNodes.Add(terminalsNode);   // terminals index: 3,4 
+
+  
+
+  NetDeviceContainer csmaDevices;
+  csmaDevices = csma.Install (csmaNodes);
+
   // Creating every  Ap's stations
-  NodeContainer ap1Node = apsNode.Get(0);
   NodeContainer wifiAp1StaNodes;
   wifiAp1StaNodes.Create(nAp1Station);    // node 7,8,9
 
-  NodeContainer ap2Node = apsNode.Get(1);
   NodeContainer wifiAp2StaNodes;
   wifiAp2StaNodes.Create(nAp2Station);    // node 10,11,12,13
 
-  NodeContainer ap3Node = apsNode.Get(2);
   NodeContainer wifiAp3StaNodes;
   wifiAp3StaNodes.Create(nAp3Station);    //  node 14
 
+  
+
+  NS_LOG_INFO ("-----Building Topology------");
+
+  // Create the csma links, from each AP & terminals to the switch
+  NetDeviceContainer csmaAp1Device, csmaAp2Device, csmaAp3Device;
+  csmaAp1Device.Add (csmaDevices.Get(0));
+  csmaAp2Device.Add (csmaDevices.Get(1));
+  csmaAp3Device.Add (csmaDevices.Get(2));
+
+  NetDeviceContainer terminalsDevice;
+  terminalsDevice.Add (csmaDevices.Get(3));
+  terminalsDevice.Add (csmaDevices.Get(4));
+  
+  NetDeviceContainer switch1Device, switch2Device;
+  NetDeviceContainer link;
+
+  //Connect ofSwitch1 to ofSwitch2  
+  link = csma.Install(NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
+  switch1Device.Add(link.Get(0));
+  switch2Device.Add(link.Get(1));
+  
+  //Connect AP1, AP2 and AP3 to ofSwitch1  
+  link = csma.Install(NodeContainer(csmaNodes.Get(0),switchesNode.Get(0)));
+  // link is a list, including the two nodes
+  // add one to apDevice{A,B,C}, the other to switch1Device
+  csmaAp1Device.Add(link.Get(0));  
+  switch1Device.Add(link.Get(1));
+  link = csma.Install(NodeContainer(csmaNodes.Get(1),switchesNode.Get(0)));
+  csmaAp2Device.Add(link.Get(0));  
+  switch1Device.Add(link.Get(1));
+  link = csma.Install(NodeContainer(csmaNodes.Get(2),switchesNode.Get(0)));
+  csmaAp3Device.Add(link.Get(0));
+  switch1Device.Add(link.Get(1));
+
+
+  //Connect terminal1 and terminal2 to ofSwitch2  
+  for (int i = 3; i < 5; i++)
+    {
+      link = csma.Install(NodeContainer(csmaNodes.Get(i), switchesNode.Get(1)));
+      terminalsDevice.Add(link.Get(0));
+      switch2Device.Add(link.Get(1));
+
+    }
+  
+
+
+
   // The next bit of code constructs the wifi device and the interconnection channel between these wifi nodes.
   // First, we configure the PHY and channel helpers:
-  YansWifiChannelHelper channel = YansWifiChannelHelper::Default();
-  YansWifiPhyHelper phy = YansWifiPhyHelper::Default();
 
   /* For simplicity, this code uses the default PHY layer configuration and channel models which are documented in
      the API doxygen documentation for the `YansWifiChannelHelper::Default` and `YansWifiPhyHelper::Default()`
@@ -161,15 +227,11 @@ main (int argc, char *argv[])
      channel, that is , they "share the same wireless medium and can communicate and interface": 
   */
   // 程序为了简单，直接创建默认的Channel和PHY。然后再将所有的PHY与Channel联系起来，保证其共享同样的无线媒介。
-  phy.SetChannel (channel.Create() );
+  
   /* Once the PHY helper is configured, we can focus on the MAC layer. Here we choose to work with "non-Qos MACs"
      so we use a NqosWifiMacHelper object to set MAC parameters.
   */
-  WifiHelper wifi; // static ns3::WifiHelper ns3::WifiHelper::Default()’ is deprecated
-  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-  // SetRemoteStationManager其实是设置了速率控制算法。这里的速率在tutorial中也没有说清楚，我觉得应该是wifi信道的数据传播速率。
-
-  NqosWifiMacHelper mac = NqosWifiMacHelper::Default();
+  
   /* The SetRemoteStationManager method tells the helper the type of rate control algorithm to use. Here, it is 
      asking the helper to use the "AARF algorithm" — details are, of course, available in Doxygen.
   */
@@ -183,6 +245,9 @@ main (int argc, char *argv[])
   // Once all the station-specific parameters are fully configured, both at the MAC and PHY layers, 
   // we can invoke our now-familiar `Install` method to create the wifi devices of these stations:
   
+
+
+
   //------- Network AP1-------
   NetDeviceContainer wifiSta1Device, wifiAp1Device;    // station devices in AP1 network, and the AP1 itself
   Ssid ssid1 = Ssid ("ssid-AP1");
@@ -190,7 +255,7 @@ main (int argc, char *argv[])
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
   wifiSta1Device = wifi.Install(phy, mac, wifiAp1StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
-  wifiAp1Device   = wifi.Install(phy, mac, ap1Node);
+  wifiAp1Device   = wifi.Install(phy, mac, apsNode.Get(0));    // csmaNodes
 
   //------- Network AP2-------
   NetDeviceContainer wifiSta2Device, wifiAp2Device;    // station devices in AP2 network, and the AP2 itself
@@ -199,7 +264,7 @@ main (int argc, char *argv[])
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
   wifiSta2Device = wifi.Install(phy, mac, wifiAp2StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
-  wifiAp2Device   = wifi.Install(phy, mac, ap2Node);
+  wifiAp2Device   = wifi.Install(phy, mac, apsNode.Get(1));     // csmaNodes
 
   //------- Network AP3-------
   NetDeviceContainer wifiSta3Device, wifiAp3Device;    // station devices in AP3 network, and the AP3 itself
@@ -208,7 +273,7 @@ main (int argc, char *argv[])
   mac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
   wifiSta3Device = wifi.Install(phy, mac, wifiAp3StaNodes );
   mac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
-  wifiAp3Device   = wifi.Install(phy, mac, ap3Node);
+  wifiAp3Device   = wifi.Install(phy, mac, apsNode.Get(2));    // csmaNodes
 
   /* We have configured Wifi for all of our STA nodes, and now we need to configure the AP (access point) node.
      We begin this process by changing the default `Attributes` of the `NqosWifiMacHelper` to reflect the requirements of the AP.
@@ -250,54 +315,9 @@ main (int argc, char *argv[])
   // We want the AP to remain in a fixed position during the simulation
   mobility2.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   // only stations in AP1 and AP2 is mobile, the only station in AP3 is not mobile.
-  mobility2.Install (apsNode);
+  mobility2.Install (csmaNodes);    // csmaNodes includes APs and terminals
   mobility2.Install (wifiAp3StaNodes);
   mobility2.Install (switchesNode);
-  mobility2.Install (terminalsNode);
-  mobility2.Install (switchesNode);
-
-
-  NS_LOG_INFO ("-----Building Topology------");
-  CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
-  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
-
-  // Create the csma links, from each AP & terminals to the switch
-  NetDeviceContainer terminalsDevice;
-  NetDeviceContainer csmaAp1Device, csmaAp2Device, csmaAp3Device;
-  NetDeviceContainer switch1Device, switch2Device;
-  NetDeviceContainer link;
-
-  //Connect ofSwitch1 to ofSwitch2  
-  link = csma.Install(NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
-  switch1Device.Add(link.Get(0));
-  switch2Device.Add(link.Get(1));
-  
-  //Connect AP1, AP2 and AP3 to ofSwitch1  
-  // the AP[i] connect to Switch1,namely switchesNode.Get(0)
-  link = csma.Install(NodeContainer(apsNode.Get(0),switchesNode.Get(0)));
-  // link is a list, including the two nodes
-  // add one to apDevice{A,B,C}, the other to switch1Device
-  csmaAp1Device.Add(link.Get(0));  
-  switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(apsNode.Get(1),switchesNode.Get(0)));
-  csmaAp2Device.Add(link.Get(0));  
-  switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(apsNode.Get(2),switchesNode.Get(0)));
-  csmaAp3Device.Add(link.Get(0));
-  switch1Device.Add(link.Get(1));
-
-
-  //Connect terminal1 and terminal2 to ofSwitch2  
-  for (int i = 0; i < 2; i++)
-    {
-      link = csma.Install(NodeContainer(terminalsNode.Get(i), switchesNode.Get(1)));
-      terminalsDevice.Add(link.Get(0));
-      switch2Device.Add(link.Get(1));
-
-    }
-  
-
 
   //Create the switch netdevice,which will do the packet switching
   Ptr<Node> switchNode1 = switchesNode.Get (0);
@@ -326,9 +346,7 @@ main (int argc, char *argv[])
 
   // Add internet stack to the terminals
   InternetStackHelper internet;
-  internet.Install (terminalsNode);
-
-  internet.Install (apsNode);
+  internet.Install (csmaNodes);
   internet.Install (wifiAp1StaNodes);
   internet.Install (wifiAp2StaNodes);
   internet.Install (wifiAp3StaNodes);
@@ -336,18 +354,16 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO ("-----Assigning IP Addresses.-----");
   Ipv4AddressHelper csmaIpAddress;
-  csmaIpAddress.SetBase ("192.168.1.0", "255.255.255.0");
+  csmaIpAddress.SetBase ("192.168.0.0", "255.255.255.0");
 
   // for Ap1,Ap2 and Ap3
-  Ipv4InterfaceContainer ApInterfaceA;    
-  ApInterfaceA = csmaIpAddress.Assign (csmaAp1Device);
-  Ipv4InterfaceContainer ApInterfaceB;
-  ApInterfaceB = csmaIpAddress.Assign (csmaAp2Device);
-  Ipv4InterfaceContainer ApInterfaceC;
-  ApInterfaceC = csmaIpAddress.Assign (csmaAp3Device);
-  // for H1 and H2
+  //Ipv4InterfaceContainer csmaInterfaces;
+  //csmaInterfaces = 
+  csmaIpAddress.Assign (csmaAp1Device);    // csmaDevices
+  csmaIpAddress.Assign (csmaAp2Device); 
+  csmaIpAddress.Assign (csmaAp3Device);
   Ipv4InterfaceContainer h1h2Interface;
-  h1h2Interface = csmaIpAddress.Assign (terminalsDevice);
+  h1h2Interface = csmaIpAddress.Assign (terminalsDevice); 
 
 
   // 
@@ -355,7 +371,7 @@ main (int argc, char *argv[])
   ap1IpAddress.SetBase ("10.0.1.0", "255.255.255.0");
   Ipv4InterfaceContainer apInterfaceA;
   Ipv4InterfaceContainer staInterfaceA;
-  apInterfaceA  = ap1IpAddress.Assign (wifiAp1Device);    // 可同时给一个节点配置多个IP
+  apInterfaceA  = ap1IpAddress.Assign (wifiAp1Device);
   staInterfaceA = ap1IpAddress.Assign (wifiSta1Device);
 
   Ipv4AddressHelper ap2IpAddress;
@@ -366,7 +382,7 @@ main (int argc, char *argv[])
   staInterfaceB = ap2IpAddress.Assign (wifiSta2Device);
 
   Ipv4AddressHelper ap3IpAddress;
-  ap1IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
+  ap3IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
   Ipv4InterfaceContainer apInterfaceC;
   Ipv4InterfaceContainer staInterfaceC;
   apInterfaceC  = ap3IpAddress.Assign (wifiAp3Device);
@@ -395,7 +411,7 @@ main (int argc, char *argv[])
   echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(terminalsNode.Get(0));    //wifiAp3StaNodes.Get(0)
+  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0)
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(10.0));
   
@@ -432,13 +448,13 @@ main (int argc, char *argv[])
   //csma.EnablePcapAll ("goal-topo", false);
 
   AnimationInterface anim ("goal-topo.xml");
-  anim.SetConstantPosition(switchNode1,15,10);             // s1-----node 2
-  anim.SetConstantPosition(switchNode2,45,10);             // s2-----node 3
-  anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 4
-  anim.SetConstantPosition(apsNode.Get(1),25,20);      // Ap2----node 5
-  anim.SetConstantPosition(apsNode.Get(2),40,20);      // Ap3----node 6
-  anim.SetConstantPosition(terminalsNode.Get(0),40,5);    // H1-----node 0
-  anim.SetConstantPosition(terminalsNode.Get(1),45,5);    // H2-----node 1
+  anim.SetConstantPosition(switchNode1,15,10);             // s1-----node 0
+  anim.SetConstantPosition(switchNode2,45,10);             // s2-----node 1
+  anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
+  anim.SetConstantPosition(apsNode.Get(1),20,20);      // Ap2----node 3
+  anim.SetConstantPosition(apsNode.Get(2),35,20);      // Ap3----node 4
+  anim.SetConstantPosition(terminalsNode.Get(0),40,25);    // H1-----node 5
+  anim.SetConstantPosition(terminalsNode.Get(1),45,25);    // H2-----node 6
   anim.SetConstantPosition(wifiAp3StaNodes.Get(0),35,35);  //   -----node 14
 
   //
