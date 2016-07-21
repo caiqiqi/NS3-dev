@@ -44,6 +44,7 @@
 #include "ns3/openflow-module.h"
 #include "ns3/log.h"
 #include "ns3/bridge-helper.h"
+#include "ns3/olsr-helper.h"
 
 
 #include "ns3/netanim-module.h"
@@ -52,8 +53,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
-// If this value is false,then by default you won't see  verbose output in the terminal,
-// unless you specify the -v option
+
 bool verbose = false;
 bool use_drop = false;
 bool tracing  = true;
@@ -95,10 +95,7 @@ main (int argc, char *argv[])
   uint32_t nAp3Station = 1;
 
   #ifdef NS3_OPENFLOW
-  //
-  // Allow the user to override any of the defaults and the above Bind() at
-  // run-time, via command-line arguments
-  //
+
   CommandLine cmd;
   cmd.AddValue ("nAp1Station", "Number of wifi STA devices of AP1", nAp1Station);
   cmd.AddValue ("nAp2Station", "Number of wifi STA devices of AP2", nAp2Station);
@@ -130,16 +127,13 @@ main (int argc, char *argv[])
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
   wifiPhy.SetChannel (wifiChannel.Create());
-  // This function has to be called before EnablePcap(), so that the header of the pcap file can be written correctly.
   wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
   WifiHelper wifi;
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-  // SetRemoteStationManager其实是设置了速率控制算法。这里的速率在tutorial中也没有说清楚，我觉得应该是wifi信道的数据传播速率。
+  //wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
   WifiMacHelper wifiMac;
 
-  //
-  // Explicitly create the nodes required by the topology (shown above).
-  //
+ 
   NS_LOG_INFO ("-----Creating nodes-----");
  
 
@@ -218,43 +212,10 @@ main (int argc, char *argv[])
       switch2Device.Add(link.Get(1));
 
     }
-  
-
-
-
-  // The next bit of code constructs the wifi device and the interconnection channel between these wifi nodes.
-  // First, we configure the PHY and channel helpers:
-
-  /* For simplicity, this code uses the default PHY layer configuration and channel models which are documented in
-     the API doxygen documentation for the `YansWifiChannelHelper::Default` and `YansWifiPhyHelper::Default()`
-     methods. Once these objects are created, we create a chennel object and associate it to our PHY layer manager
-     to make sure that all the PHY layer objects created by the `YansWifiPhyHelper` share the same underlying
-     channel, that is , they "share the same wireless medium and can communicate and interface": 
-  */
-  // 程序为了简单，直接创建默认的Channel和PHY。然后再将所有的PHY与Channel联系起来，保证其共享同样的无线媒介。
-  
-  /* Once the PHY helper is configured, we can focus on the MAC layer. Here we choose to work with "non-Qos MACs"
-     so we use a NqosWifiMacHelper object to set MAC parameters.
-  */
-  
-  /* The SetRemoteStationManager method tells the helper the type of rate control algorithm to use. Here, it is 
-     asking the helper to use the "AARF algorithm" — details are, of course, available in Doxygen.
-  */
-  /* 
-     by the helper is specified by `Attribute` as being of the “ns3::StaWifiMac” type. The use of `NqosWifiMacHelper` will 
-     ensure that the “QosSupported” `Attribute` for created MAC objects is set false. The combination of these two configurations
-     means that the MAC instance next created will be a non-QoS non-AP station (STA) in an infrastructure BSS (i.e., a BSS with an AP). 
-     Finally, the “ActiveProbing” `Attribute` is set to false. This means that probe requests will not be sent by MACs created by this helper.
-  */
-
-  // Once all the station-specific parameters are fully configured, both at the MAC and PHY layers, 
-  // we can invoke our now-familiar `Install` method to create the wifi devices of these stations:
-  
-
 
 
   //------- Network AP1-------
-  NetDeviceContainer wifiSta1Device, wifiAp1Device;    // station devices in AP1 network, and the AP1 itself
+  NetDeviceContainer wifiSta1Device, wifiAp1Device;
   Ssid ssid1 = Ssid ("ssid-AP1");
   // We want to make sure that our stations don't perform active probing.
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
@@ -263,7 +224,7 @@ main (int argc, char *argv[])
   wifiAp1Device   = wifi.Install(wifiPhy, wifiMac, wifiAp1Node);    // csmaNodes
 
   //------- Network AP2-------
-  NetDeviceContainer wifiSta2Device, wifiAp2Device;    // station devices in AP2 network, and the AP2 itself
+  NetDeviceContainer wifiSta2Device, wifiAp2Device;
   Ssid ssid2 = Ssid ("ssid-AP2");
   // We want to make sure that our stations don't perform active probing.
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
@@ -272,21 +233,13 @@ main (int argc, char *argv[])
   wifiAp2Device   = wifi.Install(wifiPhy, wifiMac, wifiAp2Node);     // csmaNodes
 
   //------- Network AP3-------
-  NetDeviceContainer wifiSta3Device, wifiAp3Device;    // station devices in AP3 network, and the AP3 itself
+  NetDeviceContainer wifiSta3Device, wifiAp3Device;
   Ssid ssid3 = Ssid ("ssid-AP3");
-  // We want to make sure that our stations don't perform active probing.
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
   wifiSta3Device = wifi.Install(wifiPhy, wifiMac, wifiAp3StaNodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
   wifiAp3Device   = wifi.Install(wifiPhy, wifiMac, wifiAp3Node);    // csmaNodes
 
-  /* We have configured Wifi for all of our STA nodes, and now we need to configure the AP (access point) node.
-     We begin this process by changing the default `Attributes` of the `NqosWifiMacHelper` to reflect the requirements of the AP.
-  */
-
-  /* Now we are going to add `mobility models`. We want the STA nodes to be mobile, wandering around inside a bounding box,
-     and we want to make the AP node stationary. We use the `MobilityHelper` to make this easy for us.
-  */
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (0),
@@ -296,9 +249,6 @@ main (int argc, char *argv[])
     "GridWidth", UintegerValue(3),
     "LayoutType",StringValue ("RowFirst")
     );    // "GridWidth", UintegerValue(3),
-  // This code tells the mobility helper to use a two-dimensional grid to initially place the STA nodes.
-  // feel free to refer to `ns3::RandomWalk2dMobilityModel` which has the nodes move in a random direction
-  // at ta random speed around inside a bounding box.
   mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
     "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
   mobility.Install (wifiAp1StaNodes);
@@ -349,95 +299,97 @@ main (int argc, char *argv[])
       switchHelper.Install (switchNode2, switch2Device, controller2);
     }
 
+
+  // We enable OLSR (which will be consulted at a higher priority than
+  // the global routing) on the backbone nodes
+  NS_LOG_INFO ("Enabling OLSR routing");
+  OlsrHelper olsr;
   // Add internet stack to the terminals
   InternetStackHelper internet;
+  internet.SetRoutingHelper (olsr); // has effect on the next Install ()
   internet.Install (csmaNodes);
   internet.Install (wifiAp1StaNodes);
   internet.Install (wifiAp2StaNodes);
   internet.Install (wifiAp3StaNodes);
-  //TODO
 
   NS_LOG_INFO ("-----Assigning IP Addresses.-----");
+
   Ipv4AddressHelper csmaIpAddress;
   csmaIpAddress.SetBase ("192.168.0.0", "255.255.255.0");
 
   // for Ap1,Ap2 and Ap3
-  //Ipv4InterfaceContainer csmaInterfaces;
-  //csmaInterfaces = 
   csmaIpAddress.Assign (csmaAp1Device);    // csmaDevices
   csmaIpAddress.Assign (csmaAp2Device); 
-  csmaIpAddress.Assign (csmaAp3Device);
+  //csmaIpAddress.Assign (csmaAp3Device);
+  Ipv4InterfaceContainer csmaAp3Interface;
+  csmaAp3Interface = csmaIpAddress.Assign (csmaAp3Device);
   Ipv4InterfaceContainer h1h2Interface;
   h1h2Interface = csmaIpAddress.Assign (terminalsDevice); 
 
 
-  // 
   Ipv4AddressHelper ap1IpAddress;
   ap1IpAddress.SetBase ("10.0.1.0", "255.255.255.0");
   NetDeviceContainer wifi1Device = wifiSta1Device;
   wifi1Device.Add(wifiAp1Device);
   Ipv4InterfaceContainer interfaceA ;
-  //Ipv4InterfaceContainer apInterfaceA;
-  //Ipv4InterfaceContainer staInterfaceA;
-  //apInterfaceA  = ap1IpAddress.Assign (wifiAp1Device);
-  //staInterfaceA = ap1IpAddress.Assign (wifiSta1Device);
   interfaceA = ap1IpAddress.Assign (wifi1Device);
   
-  // debug
-  //Ipv4Address gdb_address = apInterfaceA.GetAddress(0);
-  //gdb_address.Print(std::cout);
-  //std::cout << gdb_address << std::endl;
 
   Ipv4AddressHelper ap2IpAddress;
   ap2IpAddress.SetBase ("10.0.2.0", "255.255.255.0");
   NetDeviceContainer wifi2Device = wifiSta2Device;
   wifi2Device.Add(wifiAp2Device);
   Ipv4InterfaceContainer interfaceB ;
-  //Ipv4InterfaceContainer apInterfaceB;
-  //Ipv4InterfaceContainer staInterfaceB;
-  //apInterfaceB  = ap2IpAddress.Assign (wifiAp2Device);
-  //staInterfaceB = ap2IpAddress.Assign (wifiSta2Device);
   interfaceB = ap2IpAddress.Assign (wifi2Device);
 
 
   Ipv4AddressHelper ap3IpAddress;
   ap3IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
-  NetDeviceContainer wifi3Device = wifiSta3Device;
-  wifi3Device.Add(wifiAp3Device);
-  Ipv4InterfaceContainer interfaceC ;
-  //Ipv4InterfaceContainer apInterfaceC;
-  //Ipv4InterfaceContainer staInterfaceC;
-  //apInterfaceC  = ap3IpAddress.Assign (wifiAp3Device);
-  //staInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
-  interfaceC = ap3IpAddress.Assign (wifi3Device);
+  //NetDeviceContainer wifi3Device = wifiSta3Device;
+  //wifi3Device.Add(wifiAp3Device);
+  //Ipv4InterfaceContainer interfaceC ;
+  //interfaceC = ap3IpAddress.Assign (wifi3Device);
+  Ipv4InterfaceContainer apWifiInterfaceC ;
+  Ipv4InterfaceContainer staWifiInterfaceC ;
+  apWifiInterfaceC  = ap3IpAddress.Assign (wifiAp3Device);
+  staWifiInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
 
+  // -----for StaticRouting(its very useful)-----
+  Ptr<Ipv4> ipv4Ap3 = apsNode.Get(2)->GetObject<Ipv4> ();
+  Ptr<Ipv4> ipv4H2 = terminalsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
+  Ptr<Ipv4> ipv4Ap3Sta = wifiAp3StaNodes.Get(0)->GetObject<Ipv4> ();    // node 14
 
-  /*
-  * Empty pcap files usually come up because no packets ever leave any of the nodes and 
-  * onto the channel(s). Try moving the "Ipv4GlobalRoutingHelper::PopulateRoutingTables();" line 
-  * before the part where you create the application source/sink. 
-  * Verify if your traffic generating nodes have routes to their destinations.
-  */
-  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();   //不注释这句话不能生成各个追踪文件
+  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  // the intermedia AP3
+  Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3);
+  staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
+  staticRoutingAp3->SetDefaultRoute(staWifiInterfaceC.GetAddress(0), 1);
+  // the server
+  Ptr<Ipv4StaticRouting> staticRoutingH2 = ipv4RoutingHelper.GetStaticRouting (ipv4H2);
+  staticRoutingH2->SetDefaultRoute(csmaAp3Interface.GetAddress(0), 1);
+  // the client
+  Ptr<Ipv4StaticRouting> staticRoutingAp3Sta = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3Sta);
+  staticRoutingAp3Sta->SetDefaultRoute(apWifiInterfaceC.GetAddress(0), 1);
 
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  //ApplicationContainer serverApps = echoServer.Install (wifiAp1StaNodes.Get(nAp1Station-1));
   ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(10.0));  
   
-  //UdpEchoClientHelper echoClient (staInterfaceA.GetAddress(nAp1Station-1),port); 
+
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (1));  
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (5));  
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0)
+  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(10.0));
   
+  // GlobalRouting does NOT work with Wi-Fi.
+  // https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
   //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
   Simulator::Stop (Seconds (10.0));
 
@@ -478,11 +430,9 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4
   anim.SetConstantPosition(terminalsNode.Get(0),60,25);    // H1-----node 5
   anim.SetConstantPosition(terminalsNode.Get(1),65,25);    // H2-----node 6
-  anim.SetConstantPosition(wifiAp3StaNodes.Get(0),55,35);  //   -----node 14
+  anim.SetConstantPosition(wifiAp3StaNodes.Get(0),55,25);  //   -----node 14
 
-  //
-  // Now, do the actual simulation.
-  //
+
   NS_LOG_INFO ("-----Running Simulation.-----");
   Simulator::Run ();
   Simulator::Destroy ();
