@@ -304,9 +304,15 @@ main (int argc, char *argv[])
   // the global routing) on the backbone nodes
   NS_LOG_INFO ("Enabling OLSR routing");
   OlsrHelper olsr;
+  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+
+  Ipv4ListRoutingHelper list;
+  list.Add (ipv4RoutingHelper, 0);
+  list.Add (olsr, 10);
+
   // Add internet stack to the terminals
   InternetStackHelper internet;
-  internet.SetRoutingHelper (olsr); // has effect on the next Install ()
+  internet.SetRoutingHelper (list); // has effect on the next Install ()
   internet.Install (csmaNodes);
   internet.Install (wifiAp1StaNodes);
   internet.Install (wifiAp2StaNodes);
@@ -359,11 +365,11 @@ main (int argc, char *argv[])
   Ptr<Ipv4> ipv4H2 = terminalsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
   Ptr<Ipv4> ipv4Ap3Sta = wifiAp3StaNodes.Get(0)->GetObject<Ipv4> ();    // node 14
 
-  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  //Ipv4StaticRoutingHelper ipv4RoutingHelper;   // moved this code ahead
   // the intermedia AP3
-  Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3);
-  staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
-  staticRoutingAp3->SetDefaultRoute(staWifiInterfaceC.GetAddress(0), 1);
+  //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3);
+  //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
+  //staticRoutingAp3->SetDefaultRoute(staWifiInterfaceC.GetAddress(0), 1);
   // the server
   Ptr<Ipv4StaticRouting> staticRoutingH2 = ipv4RoutingHelper.GetStaticRouting (ipv4H2);
   staticRoutingH2->SetDefaultRoute(csmaAp3Interface.GetAddress(0), 1);
