@@ -7,13 +7,13 @@
 Detailed network topology is depicted in the top of the file `goal-topo.cc`.</br>
 ![](img/goal-topo.jpg)
 ### Nodes Description
-- node-0: switch-1, connecting node-2,3,4(AP1,AP2,AP3) and node-1(switch-2); ***stationary*** ;
-- node-1: switch-2, connecting node-5,6(terminal-1,terminal-2) and node-0(switch-1); ***stationary*** ;
-- node-2,3,4: AP1,AP2,AP3; ***stationary*** ;
-- node-5,6: terminal-1, terminal-2; ***stationary*** ;
-- node-7,8,9: mobile stations in **AP1*'s wireless network;
-- node-10,11,12,13: mobile stations in **AP2*'s wireless network;
-- node-14: mobile station in **AP3*'s wireless network; ***stationary*** ;
+- node-0<--> switch-1, connecting node-2,3,4(AP1,AP2,AP3) and node-1(switch-2); ***stationary*** ;
+- node-1<--> switch-2, connecting node-5,6(terminal-1,terminal-2) and node-0(switch-1); ***stationary*** ;
+- node-2,3,4<--> AP1,AP2,AP3; ***stationary*** ;
+- node-5,6<--> terminal-1, terminal-2; ***stationary*** ;
+- node-7,8,9<--> mobile stations in **AP1**'s wireless network;
+- node-10,11,12,13<--> mobile stations in **AP2**'s wireless network;
+- node-14<--> mobile station in **AP3**'s wireless network; ***stationary*** ;
 
 **Note:** </br>
 1. node-2,3,4,5,6 are in the same csma network(`192.168.0.0/24`).</br>
@@ -31,4 +31,5 @@ Detailed network topology is depicted in the top of the file `goal-topo.cc`.</br
 
 ### Process
 The 802.11 beacons are present all through the simulation process since the simulation starts, but they are not what we focus on here. We focus on the UDP packets.</br>
-At time `1.0`, the UdpServer starts. Then at time `2.0`, the UdpClient starts. It first send ARP requests to its corresponding network, and then it sends the UDP packet
+At time `1.0`, the UdpServer starts. Then at time `2.0`, the UdpClient starts. It sends ARP requests to get the destination's physical address before it sends the UDP packet.All in all, finally the UdpClient(at port#49153) has sent the UDP packet to the UdpServer(at port#9), and the UdpServer(at port#49153) has sent the UDP packet back to the UdpClient(at port#9). We could load the `goal-topo.xml` in  `NetAnim` to analyze the detailed process</br>
+More detailed description of this process is made later.
