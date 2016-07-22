@@ -306,17 +306,18 @@ main (int argc, char *argv[])
 
   // We enable OLSR (which will be consulted at a higher priority than
   // the global routing) on the backbone nodes
-  //NS_LOG_INFO ("Enabling OLSR routing");
-  //OlsrHelper olsr;
-  //Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  NS_LOG_INFO ("Enabling OLSR routing");
+  OlsrHelper olsr;
+  
+  Ipv4StaticRoutingHelper ipv4RoutingHelper;
 
-  //Ipv4ListRoutingHelper list;
-  //list.Add (ipv4RoutingHelper, 0);
-  //list.Add (olsr, 10);
+  Ipv4ListRoutingHelper list;
+  list.Add (ipv4RoutingHelper, 0);
+  list.Add (olsr, 10);
 
   // Add internet stack to the terminals
   InternetStackHelper internet;
-  //internet.SetRoutingHelper (list); // has effect on the next Install ()
+  internet.SetRoutingHelper (list); // has effect on the next Install ()
   internet.Install (csmaNodes);
   internet.Install (wifiAp1StaNodes);
   internet.Install (wifiAp2StaNodes);
@@ -385,7 +386,7 @@ main (int argc, char *argv[])
   */
 
   // -----for StaticRouting(its very useful)-----
-  /*
+  
   Ptr<Ipv4> ipv4Ap3 = apsNode.Get(2)->GetObject<Ipv4> ();
   Ptr<Ipv4> ipv4H2 = terminalsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
   Ptr<Ipv4> ipv4Ap3Sta = wifiAp3StaNodes.Get(0)->GetObject<Ipv4> ();    // node 14
@@ -401,7 +402,7 @@ main (int argc, char *argv[])
   // the client
   Ptr<Ipv4StaticRouting> staticRoutingAp3Sta = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3Sta);
   staticRoutingAp3Sta->SetDefaultRoute(apWifiInterfaceC.GetAddress(0), 1);
-  */
+  
 
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
