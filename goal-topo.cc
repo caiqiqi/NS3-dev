@@ -365,6 +365,7 @@ main (int argc, char *argv[])
   staWifiInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
 
 
+  /*
   // obtain a node pointer "node"
   Ipv4NatHelper natHelper ;
   Ptr<Ipv4Nat> nat = natHelper.Install (apsNode.Get (2));    //AP3
@@ -381,6 +382,7 @@ main (int argc, char *argv[])
 
   Ptr<OutputStreamWrapper> natStream = Create<OutputStreamWrapper> ("nat.rules", std::ios::out);
   nat->PrintTable (natStream);
+  */
 
   // -----for StaticRouting(its very useful)-----
   /*
