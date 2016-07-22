@@ -416,7 +416,7 @@ main (int argc, char *argv[])
   
 
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (2));    // options:1,2,5
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (4));    // options:1,2,4,5
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
@@ -438,14 +438,19 @@ main (int argc, char *argv[])
   if (tracing)
     {
       AsciiTraceHelper ascii;
-      csma.EnablePcapAll("goal-topo");
+      //csma.EnablePcapAll("goal-topo");
       csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
       wifiPhy.EnablePcap ("goal-topo-ap1-wifi", wifiAp1Device);
       wifiPhy.EnablePcap ("goal-topo-ap2-wifi", wifiAp2Device);
       wifiPhy.EnablePcap ("goal-topo-ap3-wifi", wifiAp3Device);
+      // WifiMacHelper doesnot have `EnablePcap()` method
+      csma.EnablePcap ("goal-topo-switch1-csma", switch1Device);
+      csma.EnablePcap ("goal-topo-switch1-csma", switch2Device);
       csma.EnablePcap ("goal-topo-ap1-csma", csmaAp1Device);
       csma.EnablePcap ("goal-topo-ap2-csma", csmaAp2Device);
       csma.EnablePcap ("goal-topo-ap3-csma", csmaAp3Device);
+      csma.EnablePcap ("goal-topo-H1-csma", terminalsDevice.Get(0));
+      csma.EnablePcap ("goal-topo-H2-csma", terminalsDevice.Get(1));
     }
 
   //
@@ -459,7 +464,7 @@ main (int argc, char *argv[])
   //csma.EnablePcapAll ("goal-topo", false);
 
   AnimationInterface anim ("goal-topo.xml");
-  anim.SetConstantPosition(switchNode1,15,10);             // s1-----node 0
+  anim.SetConstantPosition(switchNode1,30,10);             // s1-----node 0
   anim.SetConstantPosition(switchNode2,65,10);             // s2-----node 1
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
   anim.SetConstantPosition(apsNode.Get(1),30,20);      // Ap2----node 3
