@@ -364,6 +364,24 @@ main (int argc, char *argv[])
   apWifiInterfaceC  = ap3IpAddress.Assign (wifiAp3Device);
   staWifiInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
 
+
+  // obtain a node pointer "node"
+  Ipv4NatHelper natHelper ;
+  Ptr<Ipv4Nat> nat = natHelper.Install (apsNode.Get (2));    //AP3
+  // the Ipv4Interface indices are used to refer to the NAT interfaces
+  nat->SetInside (1);
+  nat->SetOutside (2);
+  // NAT is configured to block all traffic that does not match one of the configured rules. 
+  // The user would configure rules next, such as follows:
+  // specify local and global IP addresses
+  Ipv4StaticNatRule rule (Ipv4Address ("10.0.3.2"), Ipv4Address ("192.168.0.102"));
+  nat->AddStaticRule (rule);
+
+  // the following code will help printing the NAT rules to a file nat.rules from the stream:
+
+  Ptr<OutputStreamWrapper> natStream = Create<OutputStreamWrapper> ("nat.rules", std::ios::out);
+  nat->PrintTable (natStream);
+
   // -----for StaticRouting(its very useful)-----
   /*
   Ptr<Ipv4> ipv4Ap3 = apsNode.Get(2)->GetObject<Ipv4> ();
