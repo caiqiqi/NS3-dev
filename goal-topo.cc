@@ -410,7 +410,7 @@ main (int argc, char *argv[])
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
   ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
-  serverApps.Stop (Seconds(10.0));  
+  serverApps.Stop (Seconds(4.0));  
   
 
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
@@ -420,12 +420,12 @@ main (int argc, char *argv[])
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
   ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
-  clientApps.Stop (Seconds(10.0));
+  clientApps.Stop (Seconds(4.0));
   
   // GlobalRouting does NOT work with Wi-Fi.
   // https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
   //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  Simulator::Stop (Seconds (10.0));
+  Simulator::Stop (Seconds (4.0));
 
   NS_LOG_INFO ("-----Configuring Tracing.-----");
 
