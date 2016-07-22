@@ -443,6 +443,7 @@ main (int argc, char *argv[])
       wifiPhy.EnablePcap ("goal-topo-ap1-wifi", wifiAp1Device);
       wifiPhy.EnablePcap ("goal-topo-ap2-wifi", wifiAp2Device);
       wifiPhy.EnablePcap ("goal-topo-ap3-wifi", wifiAp3Device);
+      wifiPhy.EnablePcap ("goal-topo-ap3Sta1-wifi", wifiSta3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method
       csma.EnablePcap ("goal-topo-switch1-csma", switch1Device);
       csma.EnablePcap ("goal-topo-switch1-csma", switch2Device);
