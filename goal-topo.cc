@@ -441,9 +441,9 @@ main (int argc, char *argv[])
       wifiPhy.EnablePcap ("goal-topo-ap1-wifi", wifiAp1Device);
       wifiPhy.EnablePcap ("goal-topo-ap2-wifi", wifiAp2Device);
       wifiPhy.EnablePcap ("goal-topo-ap3-wifi", wifiAp3Device);
-      wifiPhy.EnablePcap ("goal-topo-ap1-csma", csmaAp1Device);
-      wifiPhy.EnablePcap ("goal-topo-ap2-csma", csmaAp2Device);
-      wifiPhy.EnablePcap ("goal-topo-ap3-csma", csmaAp3Device);
+      csma.EnablePcap ("goal-topo-ap1-csma", csmaAp1Device);
+      csma.EnablePcap ("goal-topo-ap2-csma", csmaAp2Device);
+      csma.EnablePcap ("goal-topo-ap3-csma", csmaAp3Device);
     }
 
   //
@@ -465,6 +465,8 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(terminalsNode.Get(0),60,25);    // H1-----node 5
   anim.SetConstantPosition(terminalsNode.Get(1),65,25);    // H2-----node 6
   anim.SetConstantPosition(wifiAp3StaNodes.Get(0),55,30);  //   -----node 14
+
+  anim.EnablePacketMetadata();   // to see the details of each packet
 
 
   NS_LOG_INFO ("-----Running Simulation.-----");
