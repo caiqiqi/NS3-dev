@@ -40,7 +40,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE(MONITOR_TEST);
 //用于测吞吐量
-void ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet);
+double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet);
 
 int
 main (int argc, char** argv)
@@ -160,7 +160,7 @@ main (int argc, char** argv)
 	{
 		flowMon = flowMonHelper.InstallAll();
 		// 调用吞吐量监控
-		throu = ThroughputMonitor(&flowMonHelper, allMon, dataset);
+		throu = ThroughputMonitor(&flowMonHelper, flowMon, dataset);
 	}
 
 	/*
