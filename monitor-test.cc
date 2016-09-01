@@ -31,6 +31,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/flow-monitor-helper.h"
 #include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/netanim-module.h"
 #include "ns3/gnuplot.h"
 
 #define MONITOR_TEST "monitor-test"
@@ -126,27 +127,67 @@ main (int argc, char** argv)
 	// 抓包到.pcap
 	p2p.EnablePcapAll(MONITOR_TEST, true);
 
+
+	std::string fileNameWithNoExtension = "plot-2d";
+	std::string graphicsFileName        = fileNameWithNoExtension + ".png";
+	std::string plotFileName            = fileNameWithNoExtension + ".plt";
+	std::string plotTitle               = "2-D Plot";
+	std::string dataTitle               = "2-D Data";
+
+	// Instantiate the plot and set its title.
+	Gnuplot plot (graphicsFileName);
+	plot.SetTitle (plotTitle);
+
+	// Make the graphics file, which the plot file will create when it is used with Gnuplot, be a `PNG` file.
+	plot.SetTerminal ("png");
+
+	// Set the labels for each axis.
+	plot.SetLegend("Flow", "Throughput");
+	// Set the range for the x axis.(-6 to +6)
+	plot.AppendExtra ("set xrange [-6:+6]");
+
+	// Instantiate the dataset, set its title, and make the points be
+	// plotted along with connecting lines.
+	Gnuplot2dDataset dataset;
+	dataset.SetTitle (dataTitle);
+	dataset.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+
 	//如果enableFlowMonitor设置为true了，则开启监控模式
 	Ptr<FlowMonitor> flowMon;
+	FlowMonitorHelper flowMonHelper;
+	double throu;
 	if (enableFlowMonitor)
 	{
-		FlowMonitorHelper flowMonHelper;
 		flowMon = flowMonHelper.InstallAll();
 		// 调用吞吐量监控
-		ThroughputMonitor(&fmHelper, allMon, dataset);
+		throu = ThroughputMonitor(&flowMonHelper, allMon, dataset);
 	}
 
+	/*
+	***** Simulation计划在1秒开始，11秒结束。*****
+	*/
+	/* `Simulator::Schedule` : Schedule a future event execution */
+    Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon, dataset);
+    
+    flowMon->SerializeToXmlFile( "flowMonitor" + MONITOR_TEST + ".xml", true, true);
+    // update gnuplot data
+    dataset.Add((double) Simulator::Now().GetSeconds(), throu); // 根据从模拟开始的时间作为横轴x，吞吐量作为纵轴y
+    std::cout << "---------------------------------------------------------------------------" << std::endl;
 
 	Simulator::Stop(Seconds(11));
+
+	AnimationInterface animation(MONITOR_TEST + ".xml");
+	animation.EnablePacketMetadata(false);
+
 	Simulator::Run();
 
-
+	// !!! 注意一定要在run()之后再AddDataset() !!!
 	//Gnuplot ...continued
-    gnuplot.AddDataset(dataset);
+    plot.AddDataset(dataset);
     // Open the plot file.
     std::ofstream plotFile(plotFileName.c_str());
     // Write the plot file.
-    gnuplot.GenerateOutput(plotFile);
+    plot.GenerateOutput(plotFile);
     // Close the plot file.
     plotFile.close();
 	Simulator::Destroy();
@@ -155,7 +196,7 @@ main (int argc, char** argv)
 
 }
 
-void ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet) {
+double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet) {
     double localThrou = 0;
     std::map<FlowId, FlowMonitor::FlowStats> flowStats = flowMon->GetFlowStats();
     Ptr<Ipv4FlowClassifier> classing = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
@@ -173,13 +214,8 @@ void ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gn
         std::cout << "Last Received Packet  : " << stats->second.timeLastRxPacket.GetSeconds() << " Seconds" << std::endl;
         std::cout << "Throughput: " << stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps" << std::endl;
         localThrou = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024);
-        // update gnuplot data
-        DataSet.Add((double) Simulator::Now().GetSeconds(), (double) localThrou); // 根据从模拟开始的时间作为横轴x，吞吐量作为纵轴y
-        std::cout << "---------------------------------------------------------------------------" << std::endl;
     }
-    /* `Simulator::Schedule` : Schedule a future event execution */
-    Simulator::Schedule(Seconds(1), &ThroughputMonitor, fmhelper, flowMon, DataSet);
-    
-    flowMon->SerializeToXmlFile( MONITOR_TEST + ".xml", true, true);
+
+    return localThrou;
 
 }
