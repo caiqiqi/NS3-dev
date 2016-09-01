@@ -409,6 +409,10 @@ main (int argc, char *argv[])
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
+  /*
+    `OnOffHelper` is for TCP
+    `UdpEchoServerHelper` is for UDP
+  */
   UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
   ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  

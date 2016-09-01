@@ -1,0 +1,43 @@
+<h1>UDP Echo Experiment using ns-3</h1>
+
+<h2>Demo</h2>
+
+<p><img src="img/ns3-udp-demo-2.gif" alt="" /></p>
+
+<h2>Network Topology</h2>
+
+<p>Detailed network topology is depicted in the top of the file <code>goal-topo.cc</code>.</br>
+<img src="img/goal-topo.jpg" alt="" /></p>
+
+<h3>Nodes Description</h3>
+
+<ul>
+<li>node-0&lt;--> switch-1, connecting node-2,3,4(AP1,AP2,AP3) and node-1(switch-2); <strong><em>stationary</em></strong> ;</li>
+<li>node-1&lt;--> switch-2, connecting node-5,6(terminal-1,terminal-2) and node-0(switch-1); <strong><em>stationary</em></strong> ;</li>
+<li>node-2,3,4&lt;--> AP1,AP2,AP3; <strong><em>stationary</em></strong> ;</li>
+<li>node-5,6&lt;--> terminal-1, terminal-2; <strong><em>stationary</em></strong> ;</li>
+<li>node-7,8,9&lt;--> mobile stations in <strong>AP1</strong>'s wireless network;</li>
+<li>node-10,11,12,13&lt;--> mobile stations in <strong>AP2</strong>'s wireless network;</li>
+<li>node-14&lt;--> mobile station in <strong>AP3</strong>'s wireless network; <strong><em>stationary</em></strong> ;</li>
+</ul>
+
+<p><strong>Note:</strong> </br>
+1. node-2,3,4,5,6 are in the same csma network(<code>192.168.0.0/24</code>).</br>
+2. node-2,7,8,9 are in the same wirelss network(<code>10.0.1.0/24</code>).</br>
+3. node-3,10,11,12,13 are in the same wirelss network(<code>10.0.2.0/24</code>).</br>
+4. node-4,14 are in the same wirelss network(<code>10.0.3.0/24</code>).</br></p>
+
+<h2>UDP Echo Experiment</h2>
+
+<ul>
+<li>Simulation starts at time <code>0.0</code>;</li>
+<li>UdpServer(node-6, <code>192.168.0.8</code>) starting at time <code>1.0</code> stopping at time <code>5.0</code>;</li>
+<li>UdpClient(node-14, <code>10.0.3.2</code>) starts at time <code>2.0</code> stopping at time <code>5.0</code>, during which <strong>four</strong> UDP packets are sent from UdpClient; </li>
+<li>Simulation stops at time <code>5.0</code>;</li>
+</ul>
+
+<h3>Process</h3>
+
+<p>The 802.11 beacons are present all through the simulation process since the simulation starts, but they are not what we focus on here. We focus on the UDP packets.</br>
+At time <code>1.0</code>, the UdpServer starts. Then at time <code>2.0</code>, the UdpClient starts. It sends ARP requests to get the destination's physical address before it sends the UDP packet.All in all, finally the UdpClient(at port#49153) has sent the UDP packet to the UdpServer(at port#9), and the UdpServer(at port#49153) has sent the UDP packet back to the UdpClient(at port#9). We could load the <code>goal-topo.xml</code> in  <code>NetAnim</code> to analyze the detailed process</br>
+More detailed description of this process is made later.</p>
