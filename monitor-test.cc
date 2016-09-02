@@ -169,9 +169,9 @@ main (int argc, char** argv)
  ***** Simulation计划在1秒开始，11秒结束。*****
  */
  /* `Simulator::Schedule` : Schedule a future event execution */
-    Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon, dataset);
+    //Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon, dataset);
     
-    flowMon->SerializeToXmlFile( "flowMonitor" + MONITOR_TEST + ".xml", true, true);
+    flowMon->SerializeToXmlFile( MONITOR_TEST + "flowMonitor_" + ".xml", true, true);
     // update gnuplot data
     dataset.Add((double) Simulator::Now().GetSeconds(), throu); // 根据从模拟开始的时间作为横轴x，吞吐量作为纵轴y
     std::cout << "---------------------------------------------------------------------------" << std::endl;
