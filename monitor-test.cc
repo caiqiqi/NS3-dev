@@ -163,11 +163,6 @@ main (int argc, char** argv)
 		throu = ThroughputMonitor(&flowMonHelper, flowMon, dataset);
 	}
 
-	/*
-	***** Simulation计划在1秒开始，11秒结束。*****
-	*/
-	/* `Simulator::Schedule` : Schedule a future event execution */
-    Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon, dataset);
     
     flowMon->SerializeToXmlFile( "flowMonitor" + MONITOR_TEST + ".xml", true, true);
     // update gnuplot data
@@ -197,6 +192,7 @@ main (int argc, char** argv)
 }
 
 double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet) {
+    
     double localThrou = 0;
     std::map<FlowId, FlowMonitor::FlowStats> flowStats = flowMon->GetFlowStats();
     Ptr<Ipv4FlowClassifier> classing = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
@@ -213,6 +209,7 @@ double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, 
         std::cout << "Duration    : " << (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()) << std::endl;
         std::cout << "Last Received Packet  : " << stats->second.timeLastRxPacket.GetSeconds() << " Seconds" << std::endl;
         std::cout << "Throughput: " << stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024 << " Mbps" << std::endl;
+        
         localThrou = (stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds()) / 1024 / 1024);
     }
 
