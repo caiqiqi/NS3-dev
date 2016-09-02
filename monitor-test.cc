@@ -30,6 +30,7 @@
 #include "ns3/point-to-point-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/flow-monitor-helper.h"
+#include "ns3/flow-monitor-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/netanim-module.h"
 #include "ns3/gnuplot.h"
@@ -39,14 +40,14 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("monitor-test");
 
-const char* MONITOR_TEST = "monitor-test" ;
+const std::string MONITOR_TEST = "monitor-test" ;
 //用于测吞吐量
 double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet);
 
 int
 main (int argc, char** argv)
 {
-	LogComponentEnable(MONITOR_TEST, LOG_LEVEL_INFO);
+	LogComponentEnable("monitor-test", LOG_LEVEL_INFO);
 	Config::SetDefault ("ns3::OnOffApplication::PacketSize", UintegerValue (210));
 	Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue ("448kb/s"));
 
