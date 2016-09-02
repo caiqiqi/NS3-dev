@@ -39,7 +39,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("monitor-test");
 
-std::string MONITOR_TEST = "monitor-test" ;
+const char* MONITOR_TEST = "monitor-test" ;
 //用于测吞吐量
 double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet);
 
