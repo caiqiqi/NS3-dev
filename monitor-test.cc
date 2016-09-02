@@ -165,6 +165,11 @@ main (int argc, char** argv)
 		throu = ThroughputMonitor(&flowMonHelper, flowMon, dataset);
 	}
 
+ /*
+ ***** Simulation计划在1秒开始，11秒结束。*****
+ */
+ /* `Simulator::Schedule` : Schedule a future event execution */
+    Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon, dataset);
     
     flowMon->SerializeToXmlFile( "flowMonitor" + MONITOR_TEST + ".xml", true, true);
     // update gnuplot data
