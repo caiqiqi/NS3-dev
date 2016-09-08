@@ -60,10 +60,24 @@ uint8_t data[writeSize];
 void StartFlow (Ptr<Socket>, Ipv4Address, uint16_t);
 void WriteUntilBufferFull (Ptr<Socket>, uint32_t);
 
+
+// Cwnd stands for 『The TCP connection's congestion window』 TCP连接的拥塞窗口
 static void 
 CwndTracer (uint32_t oldval, uint32_t newval)
 {
   NS_LOG_INFO ("Moving cwnd from " << oldval << " to " << newval);
+}
+
+// manually added by caiqiqi on 『Sep, 8 2016』
+/*
+This function just logs the current simulation time and the new value of the congestion window every time it is changed. 
+ You can probably imagine that you could load the resulting output into a graphics program (`gnuplot` or `Excel`) 
+ and immediately see a nice graph of the congestion window behavior over time.
+*/
+ static void
+CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
+{
+  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << ``\t'' << newCwnd);
 }
 
 int main (int argc, char *argv[])
@@ -133,11 +147,15 @@ int main (int argc, char *argv[])
 
   uint16_t servPort = 50000;
 
-  // Create a packet sink to receive these packets on n2...
-  // PacketSinkHelper ???
+  // Since we are using TCP, we need something on the destination node to receive TCP connections and data. 
+  // The PacketSink Application is commonly used in ns-3 for that purpose.
+
+  //***** Create a packet sink to receive these packets on n2... ****
+  // This code instantiates a `PacketSinkHelper` and tells it to create sockets using the class `ns3::TcpSocketFactory`
+  // the `ns3::TcpSocketFactory`使用了『对象工厂』设计模式。只需要通过一个字符串指定`TypeId`即可 
   PacketSinkHelper sink ("ns3::TcpSocketFactory",
                          InetSocketAddress (Ipv4Address::GetAny (), servPort));
-
+  // `PacketSinkHelper` is, A helper to make it easier to instantiate an `ns3::PacketSinkApplication` on a set of nodes. 
   ApplicationContainer apps = sink.Install (n1n2.Get (1));
   apps.Start (Seconds (0.0));
   apps.Stop (Seconds (3.0));
@@ -148,10 +166,14 @@ int main (int argc, char *argv[])
   // "Application".
 
   // Create and bind the socket...
-  Ptr<Socket> localSocket =
-    Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ());
+  Ptr<Socket> localSocket = Socket::CreateSocket (n0n1.Get (0), TcpSocketFactory::GetTypeId ());
   localSocket->Bind ();
 
+
+  /*
+  Once the TcpSocket is created and attached to the Node, 
+  we can use `TraceConnectWithoutContext` to connect the CongestionWindow trace source to our trace sink.
+  */
   // Trace changes to the congestion window(拥塞窗口)
   Config::ConnectWithoutContext ("/NodeList/0/$ns3::TcpL4Protocol/SocketList/0/CongestionWindow", MakeCallback (&CwndTracer));
 
@@ -159,6 +181,10 @@ int main (int argc, char *argv[])
   // ns3::Application subclass would do internally.
   Simulator::ScheduleNow (&StartFlow, localSocket,
                           ipInterfs.GetAddress (1), servPort);
+
+  /****************
+  Every time a simulation event is scheduled, an `Event` is created. 
+  *****************/
 
   // One can toggle the comment for the following line on or off to see the
   // effects of finite send buffer modelling.  One can also change the size of
