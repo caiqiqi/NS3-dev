@@ -39,6 +39,7 @@
 #include "ns3/internet-module.h"
 #include "ns3/point-to-point-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/netanim-module.h"
 
 using namespace ns3;
 
@@ -77,7 +78,7 @@ This function just logs the current simulation time and the new value of the con
  static void
 CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
 {
-  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << ``\t'' << newCwnd);
+  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << '\t' << newCwnd);
 }
 
 int main (int argc, char *argv[])
