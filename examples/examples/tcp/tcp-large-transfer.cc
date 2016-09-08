@@ -111,6 +111,12 @@ int main (int argc, char *argv[])
   NetDeviceContainer dev0 = p2p.Install (n0n1);
   NetDeviceContainer dev1 = p2p.Install (n1n2);
 
+  MobilityHelper mobility;
+  // We want the AP to remain in a fixed position during the simulation
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.Install (n0n1.Get(0));
+  mobility.Install (n1n2);
+
   // Now add ip/tcp stack to all nodes.
   InternetStackHelper internet;
   internet.InstallAll ();
