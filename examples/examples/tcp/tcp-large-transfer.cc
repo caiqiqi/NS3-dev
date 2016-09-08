@@ -69,17 +69,6 @@ CwndTracer (uint32_t oldval, uint32_t newval)
   NS_LOG_INFO ("Moving cwnd from " << oldval << " to " << newval);
 }
 
-// manually added by caiqiqi on 『Sep, 8 2016』
-/*
-This function just logs the current simulation time and the new value of the congestion window every time it is changed. 
- You can probably imagine that you could load the resulting output into a graphics program (`gnuplot` or `Excel`) 
- and immediately see a nice graph of the congestion window behavior over time.
-*/
- static void
-CwndChange (uint32_t oldCwnd, uint32_t newCwnd)
-{
-  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << '\t' << newCwnd);
-}
 
 int main (int argc, char *argv[])
 {
