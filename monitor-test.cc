@@ -172,9 +172,6 @@ main (int argc, char** argv)
     //Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon, dataset);
     
     flowMon->SerializeToXmlFile( MONITOR_TEST + "flowMonitor_" + ".xml", true, true);
-    // update gnuplot data
-    dataset.Add((double) Simulator::Now().GetSeconds(), throu); // 根据从模拟开始的时间作为横轴x，吞吐量作为纵轴y
-    std::cout << "---------------------------------------------------------------------------" << std::endl;
 
 	Simulator::Stop(Seconds(11));
 
@@ -182,16 +179,6 @@ main (int argc, char** argv)
 	animation.EnablePacketMetadata(false);
 
 	Simulator::Run();
-
-	// !!! 注意一定要在run()之后再AddDataset() !!!
-	//Gnuplot ...continued
-    plot.AddDataset(dataset);
-    // Open the plot file.
-    std::ofstream plotFile(plotFileName.c_str());
-    // Write the plot file.
-    plot.GenerateOutput(plotFile);
-    // Close the plot file.
-    plotFile.close();
 	Simulator::Destroy();
 
 	return 0;
