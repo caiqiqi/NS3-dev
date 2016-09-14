@@ -51,7 +51,7 @@ static const uint32_t totalTxBytes = 2000000;
 static uint32_t currentTxBytes = 0;
 // Perform series of 1040 byte writes (this is a multiple of 26 since
 // we want to detect data splicing in the output stream)
-static const uint32_t writeSize = 1040;
+static const uint32_t writeSize = 1040; // 1024 = 26 * 40
 uint8_t data[writeSize];
 
 // These are for starting the writing process, and handling the sending 
@@ -105,8 +105,8 @@ int main (int argc, char *argv[])
   // First make and configure the helper, so that it will put the appropriate
   // attributes on the network interfaces and channels we are about to install.
   PointToPointHelper p2p;
-  p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (10000000)));
-  p2p.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (10)));
+  p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (10000000))); // 带宽10Mb/s
+  p2p.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (10)));  // 10ms延迟
 
   // And then install devices and channels connecting our topology.
   NetDeviceContainer dev0 = p2p.Install (n0n1);

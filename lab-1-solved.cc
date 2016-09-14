@@ -72,8 +72,10 @@ int main (int argc, char *argv[])
 //
 // Enable logging for UdpClient and UdpServer
 //
-//  LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
-//  LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
+  LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+  //LogComponentEnable ("UdpClient", LOG_LEVEL_FUNCTION);
+  LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
+  //LogComponentEnable ("UdpServer", LOG_LEVEL_FUNCTION);
 
 //
 // Explicitly create the nodes required by the topology (shown above).
@@ -183,12 +185,17 @@ int main (int argc, char *argv[])
   std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
-	  Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+	  /* `Ipv4FlowClassifier`
+    Classifies packets by looking at their IP and TCP/UDP headers. 
+    FiveTuple五元组是：(source-ip, destination-ip, protocol, source-port, destination-port)
+    */
+
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
       if ((t.sourceAddress=="10.1.1.1" && t.destinationAddress == "10.1.2.2"))
       {
           std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";
-          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";
+          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";   // 传输了多少字节
+          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";   // 收到了多少字节
       	  std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024  << " Mbps\n";
       }
      }
