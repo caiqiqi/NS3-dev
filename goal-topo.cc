@@ -51,6 +51,7 @@
 
 using namespace ns3;
 
+// 用于命令行操作 `$ export NS_LOG=GoalTopoScript=info`
 NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
 
@@ -118,11 +119,11 @@ main (int argc, char *argv[])
 
   if (verbose)
     {
-      LogComponentEnable ("OpenFlowCsmaSwitch", LOG_LEVEL_INFO);
-      LogComponentEnable ("OpenFlowInterface", LOG_LEVEL_INFO);
-      LogComponentEnable ("OpenFlowSwitchNetDevice", LOG_LEVEL_INFO);
-      LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);  
-      LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO); 
+      // LogComponentEnable ("OpenFlowCsmaSwitch", LOG_LEVEL_INFO);
+      // LogComponentEnable ("OpenFlowInterface", LOG_LEVEL_INFO);
+      // LogComponentEnable ("OpenFlowSwitchNetDevice", LOG_LEVEL_INFO);
+      // LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);  
+      // LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO); 
     }
   
 

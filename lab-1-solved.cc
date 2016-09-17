@@ -72,9 +72,9 @@ int main (int argc, char *argv[])
 //
 // Enable logging for UdpClient and UdpServer
 //
-  LogComponentEnable ("UdpClient", LOG_LEVEL_INFO);
+  //LogComponentEnable ("UdpClient", LOG_LEVEL_INFO); // INFO模式会显示很多内容到屏幕上
   //LogComponentEnable ("UdpClient", LOG_LEVEL_FUNCTION);
-  LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
+  //LogComponentEnable ("UdpServer", LOG_LEVEL_INFO);
   //LogComponentEnable ("UdpServer", LOG_LEVEL_FUNCTION);
 
 //
