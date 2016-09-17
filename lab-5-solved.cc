@@ -139,6 +139,7 @@ int main (int argc, char *argv[])
   // The below set of helpers will help us to put together the wifi NICs we want
   WifiHelper wifi;
 
+  /* YansWifiPhyHelper 物理层 */
   YansWifiPhyHelper wifiPhy =  YansWifiPhyHelper::Default ();
   // set it to zero; otherwise, gain will be added
   wifiPhy.Set ("RxGain", DoubleValue (-10) ); 
@@ -150,6 +151,7 @@ int main (int argc, char *argv[])
   wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
   wifiPhy.SetChannel (wifiChannel.Create ());
 
+  /* NqosWifiMacHelper 数据链路层 */
   // Add a non-QoS upper mac, and disable rate control
   NqosWifiMacHelper wifiMac = NqosWifiMacHelper::Default ();
   wifi.SetStandard (WIFI_PHY_STANDARD_80211b);

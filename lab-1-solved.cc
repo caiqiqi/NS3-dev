@@ -58,12 +58,12 @@ NS_LOG_COMPONENT_DEFINE ("Lab1");
 
 int main (int argc, char *argv[])
 {
-  double lat = 2.0;
+  double lat = 2.0;  // 延迟 2ms
   uint64_t rate = 5000000; // Data rate in bps
   double interval = 0.05;
 
   CommandLine cmd;
-  cmd.AddValue ("latency", "P2P link Latency in miliseconds", lat);
+  cmd.AddValue ("latency", "P2P link Latency in miliseconds", lat);   // 延迟 2ms
   cmd.AddValue ("rate", "P2P data rate in bps", rate);
   cmd.AddValue ("interval", "UDP client packet interval", interval);
 
@@ -89,6 +89,7 @@ int main (int argc, char *argv[])
 // Explicitly create the channels required by the topology (shown above).
 //
   PointToPointHelper p2p;
+  // 这里直接在`属性`中设置好了，延迟是2 ms
   p2p.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (lat)));
   p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (rate)));
   p2p.SetDeviceAttribute ("Mtu", UintegerValue (1400));  
@@ -117,6 +118,8 @@ int main (int argc, char *argv[])
 
 
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
+  
 
   NS_LOG_INFO ("Create Applications.");
 //
@@ -196,13 +199,15 @@ int main (int argc, char *argv[])
           std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";   // 传输了多少字节
           std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";   // 收到了多少字节
-      	  std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024  << " Mbps\n";
+      	  // 得出吞吐量(Throughput是多少)
+          std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024  << " Mbps\n";
       }
      }
 
 
-
   monitor->SerializeToXmlFile("lab-1.flowmon", true, true);
+  // the SerializeToXmlFile () function 2nd and 3rd parameters 
+  // are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
 
   Simulator::Destroy ();
   NS_LOG_INFO ("Done.");
