@@ -52,7 +52,7 @@
 using namespace ns3;
 
 // 用于命令行操作 `$ export NS_LOG=GoalTopoScript=info`
-NS_LOG_COMPONENT_DEFINE ("GoalTopoForMonitorTest");
+NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
 
 bool verbose = false;
@@ -136,8 +136,6 @@ main (int argc, char *argv[])
   wifiPhy.SetChannel (wifiChannel.Create());
   //wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
   WifiHelper wifi;
-  //The SetRemoteStationManager method tells the helper the type of rate control algorithm to use. 
-  //Here, it is asking the helper to use the AARF algorithm
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
   //wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
   WifiMacHelper wifiMac;
@@ -226,16 +224,8 @@ main (int argc, char *argv[])
   //------- Network AP1-------
   NetDeviceContainer wifiSta1Device, wifiAp1Device;
   Ssid ssid1 = Ssid ("ssid-AP1");
-  /*
-  *  We want to make sure that our stations don't perform active probing.
-  *  Finally, the “ActiveProbing” Attribute is set to `false`. 
-  *  This means that probe requests will not be sent by MACs created by this helper. 
-  *  "ns3::NqstaWifiMac" This means that the MAC will use a “non-QoS station” (nqsta) state machine.
-  *  `BeaconGeneration`: Whether or not beacons are generated
-  *  `BeaconInterval` : Delay between two beacons
-  * */
+  // We want to make sure that our stations don't perform active probing.
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
-  // 
   wifiSta1Device = wifi.Install(wifiPhy, wifiMac, wifiAp1StaNodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
   wifiAp1Device   = wifi.Install(wifiPhy, wifiMac, wifiAp1Node);    // csmaNodes
@@ -419,43 +409,30 @@ main (int argc, char *argv[])
 
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
-
-/*
-* Create a server application which waits for input UDP packets 
-* and uses the information carried into their payload to compute delay 
-* and to determine if some packets are lost. 
-* 与`UdpEchoServerHelper`是不同的
-*/
-
-// Create one udpServer application on node one.
-  uint16_t port1 = 8000;
-  UdpServerHelper server1 (port1);
-
-  ApplicationContainer server_apps;
-  server_apps = server1.Install (terminalsNode.Get(1));   // node #6 (192.168.0.8) (第二个固定终端节点) 作为 UdpServer
-
-  server_apps.Start (Seconds (1.0));
-  server_apps.Stop (Seconds (10.0));
-
-//
-// Create one UdpClient application to send UDP datagrams
-//
+  uint16_t port = 9;   // Discard port (RFC 863)
+  /*
+    `OnOffHelper` is for TCP
+    `UdpEchoServerHelper` is for UDP
+  */
+  UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
+  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
+  serverApps.Start (Seconds(1.0));  
+  serverApps.Stop (stopTime);  
   
-  UdpClientHelper client1 (h1h2Interface.GetAddress(1), port1);        // dest: IP,port
 
-  client1.SetAttribute ("MaxPackets", UintegerValue (320));       // 最大数据包数
-  client1.SetAttribute ("Interval", TimeValue (Time ("0.01")));   // 时间间隔
-  client1.SetAttribute ("PacketSize", UintegerValue (1024));      // 包大小
-
-  ApplicationContainer client_apps;
-  client_apps = client1.Install (wifiAp1StaNodes.Get (2));    // node #9 (10.0.1.3)  也就是AP1下的9号节点
-
-  client_apps.Start (Seconds (2.0));
-  client_apps.Stop (Seconds (10.0));
-
-
-
-
+  UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (4));    // options:1,2,4,5
+  // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
+  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
+  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
+  clientApps.Start (Seconds(2.0));  
+  clientApps.Stop (stopTime);
+  
+  // GlobalRouting does NOT work with Wi-Fi.
+  // https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
+  //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+  Simulator::Stop (stopTime);
 
   NS_LOG_INFO ("-----Configuring Tracing.-----");
 
@@ -505,54 +482,9 @@ main (int argc, char *argv[])
   anim.EnablePacketMetadata();   // to see the details of each packet
 
 
-
-/*
-** Calculate Throughput using Flowmonitor
-*/
-  FlowMonitorHelper flowmon;
-  Ptr<FlowMonitor> monitor = flowmon.InstallAll();
-
-
-/*
-** Now, do the actual simulation.
-*/
-  NS_LOG_INFO ("Run Simulation.");
-  Simulator::Stop (Seconds(11.0));
+  NS_LOG_INFO ("-----Running Simulation.-----");
   Simulator::Run ();
-
-  
-
-  monitor->CheckForLostPackets ();
-
-  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
-  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
-    {
-    /* `Ipv4FlowClassifier`
-    Classifies packets by looking at their IP and TCP/UDP headers. 
-    FiveTuple五元组是：(source-ip, destination-ip, protocol, source-port, destination-port)
-    */
-
-    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-      if ((t.sourceAddress=="10.1.1.1" && t.destinationAddress == "10.1.2.2")) //TODO
-      {
-          std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";   // 传输了多少字节
-          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";   // 收到了多少字节
-          // 得出吞吐量(Throughput是多少)
-          std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024  << " Mbps\n";
-      }
-     }
-
-
-  monitor->SerializeToXmlFile("lab-1.flowmon", true, true);
-  // the SerializeToXmlFile () function 2nd and 3rd parameters 
-  // are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
-
   Simulator::Destroy ();
-
-
-  
   NS_LOG_INFO ("-----Done.-----");
   #else
   NS_LOG_INFO ("-----NS-3 OpenFlow is not enabled. Cannot run simulation.-----");

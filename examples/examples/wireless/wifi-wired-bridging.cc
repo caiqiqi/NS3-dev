@@ -58,6 +58,8 @@
 
 using namespace ns3;
 
+NS_LOG_COMPONENT_DEFINE ("wifiWiredBridgingScript");
+
 int main (int argc, char *argv[])
 {
   uint32_t nWifis = 2;
@@ -75,6 +77,11 @@ int main (int argc, char *argv[])
   NodeContainer backboneNodes;
   NetDeviceContainer backboneDevices;
   Ipv4InterfaceContainer backboneInterfaces;
+  /*
+   * 向量vector属于标准模板库，可以广义上认为是数组的增强版
+   * 与数组相比其优点在于能根据需要随时自动调整自身的大小以便容下所要放的元素
+   * 一下几个vector只声明了，但是没有初始化其大小
+   * */
   std::vector<NodeContainer> staNodes;
   std::vector<NetDeviceContainer> staDevices;
   std::vector<NetDeviceContainer> apDevices;
@@ -109,6 +116,7 @@ int main (int argc, char *argv[])
       Ipv4InterfaceContainer staInterface;
       Ipv4InterfaceContainer apInterface;
       MobilityHelper mobility;
+      // `BridgeHelper` : Add capability to bridge multiple LAN segments (IEEE 802.1D bridging)
       BridgeHelper bridge;
       WifiHelper wifi;
       WifiMacHelper wifiMac;
@@ -133,7 +141,17 @@ int main (int argc, char *argv[])
       apDev = wifi.Install (wifiPhy, wifiMac, backboneNodes.Get (i));
 
       NetDeviceContainer bridgeDev;
+      /* 
+       * `ns3::BridgeHelper::Install(Ptr<Node> node, NetDeviceContainer c)`
+       * creates an `ns3::BridgeNetDevice` with the attributes configured by
+       * `BridgeHelper::SetDeviceAttribute()`, adds the device to the node,
+       * and attachs the given NetDevices as ports of the bridge.
+       * @param node: The node to install the device in
+       * @param c: Container of NetDevices to add as bridge posrts
+       * returns : A container holding the added net device.
+       */
       bridgeDev = bridge.Install (backboneNodes.Get (i), NetDeviceContainer (apDev, backboneDevices.Get (i)));
+      //以上把骨干网上的索引为i的ap的网卡和这里的apDev网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
 
       // assign AP IP address to bridge, not wifi
       apInterface = ip.Assign (bridgeDev);
@@ -152,6 +170,7 @@ int main (int argc, char *argv[])
       staInterface = ip.Assign (staDev);
 
       // save everything in containers.
+      // push_back() : 在vector尾部加入一个数据
       staNodes.push_back (sta);
       apDevices.push_back (apDev);
       apInterfaces.push_back (apInterface);
@@ -161,28 +180,22 @@ int main (int argc, char *argv[])
       wifiX += 20.0;
     }
 
-  Address dest;
-  std::string protocol;
-  if (sendIp)
-    {
-      dest = InetSocketAddress (staInterfaces[1].GetAddress (1), 1025);
-      protocol = "ns3::UdpSocketFactory";
-    }
-  else
-    {
-      PacketSocketAddress tmp;
-      tmp.SetSingleDevice (staDevices[0].Get (0)->GetIfIndex ());
-      tmp.SetPhysicalAddress (staDevices[1].Get (0)->GetAddress ());
-      tmp.SetProtocol (0x807);
-      dest = tmp;
-      protocol = "ns3::PacketSocketFactory";
-    }
+  NS_LOG_INFO ("-----Creating Applications.-----");
+  uint16_t port = 9;
 
-  OnOffHelper onoff = OnOffHelper (protocol, dest);
-  onoff.SetConstantRate (DataRate ("500kb/s"));
-  ApplicationContainer apps = onoff.Install (staNodes[0].Get (0));
-  apps.Start (Seconds (0.5));
-  apps.Stop (Seconds (3.0));
+  UdpEchoServerHelper echoServer (port);
+  ApplicationContainer serverApps = echoServer.Install (staNodes[1].Get (1));   // server is 1,1
+  serverApps.Start (Seconds(1.0));
+  serverApps.Stop  (Seconds(5.0));
+
+  UdpEchoClientHelper echoClient (staInterfaces[1].GetAddress(1) ,port);  // dest: ip, port
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (4));
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));
+  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));
+  ApplicationContainer clientApps = echoClient.Install(staNodes[0].Get (0));  // client is 0,0
+  clientApps.Start (Seconds(2.0));
+  clientApps.Stop (Seconds(5.0));
+
 
   wifiPhy.EnablePcap ("wifi-wired-bridging", apDevices[0]);
   wifiPhy.EnablePcap ("wifi-wired-bridging", apDevices[1]);
