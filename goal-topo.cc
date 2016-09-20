@@ -247,6 +247,8 @@ main (int argc, char *argv[])
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
   wifiAp3Device   = wifi.Install(wifiPhy, wifiMac, wifiAp3Node);    // csmaNodes
 
+  
+  // 先安装AP1
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (0),
@@ -260,6 +262,7 @@ main (int argc, char *argv[])
     "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
   mobility.Install (wifiAp1StaNodes);
 
+  // 再安装AP2
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (25),
     "MinY",      DoubleValue (25),

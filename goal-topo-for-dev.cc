@@ -88,20 +88,18 @@ SetTimeout (std::string value)
 int
 main (int argc, char *argv[])
 {
-  uint32_t nAp         = 3;
-  uint32_t nSwitch     = 2;
-  uint32_t nTerminal   = 2;
-  uint32_t nAp1Station = 3;
-  uint32_t nAp2Station = 4;
-  uint32_t nAp3Station = 1;
+  uint32_t nSwitch     = 2;  // switch的数量
+  uint32_t nAp         = 3;  // AP的数量
+  uint32_t nTerminal   = 2;  // 不移动的终端节点数量
+  uint32_t nStaAp[3]   = {3, 4, 1};  // 把各个wifi网络的sta数放在一个数组里面
+  //uint32_t nAp1Station = nStaAp[0];
+  //uint32_t nAp2Station = nStaAp[1];
+  //uint32_t nAp3Station = nStaAp[2];
 
   ns3::Time stopTime = ns3::Seconds (5.0);
 
   #ifdef NS3_OPENFLOW
 
-
-  Config::SetDefault ("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue (true));
-  Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",UintegerValue (10));
 
   CommandLine cmd;
   cmd.AddValue ("nAp1Station", "Number of wifi STA devices of AP1", nAp1Station);
@@ -125,130 +123,97 @@ main (int argc, char *argv[])
       // LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);  
       // LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO); 
     }
-  
 
-  //----- init Helpers -----
-  CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
-  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
-  YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
-  YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
-  wifiPhy.SetChannel (wifiChannel.Create());
+  WifiHelper            wifi;
+  WifiMacHelper         wifiMac;
+  YansWifiPhyHelper     wifiPhy = YansWifiPhyHelper::Default();
+  YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
+
+  wifiPhy.SetChannel (wifiChannel.Create ());
   //wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
-  WifiHelper wifi;
-  wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
-  //wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
-  WifiMacHelper wifiMac;
 
- 
+  // `BridgeHelper` : Add capability to bridge multiple LAN segments (IEEE 802.1D bridging)
+  BridgeHelper bridge;
+  
+  InternetStackHelper stack ;
+  CsmaHelper csma ;
+  Ipv4AddressHelper ip;
+  ip.SetBase ("192.168.0.0", "255.255.255.0" );
+
+
+
+
   NS_LOG_INFO ("-----Creating nodes-----");
  
+  // setup swtiches (switch节点=> #0 #1)
+  NodeContainer switchesNodes;
+  switchesNodes.Create (nSwitch); 
+  // setup AP (AP节点=> #2 #3 #4)
+  NodeContainer apBackboneNodes;                              // AP节点，共 #3个
+  apBackboneNodes.Create (nAp);
+  NetDeviceContainer apCsmaDevices;                           // AP的骨干网中的csma网卡设备
+  NetDeviceContainer apWifiDevices;                           // AP的wifi网中的wifi网卡设备
+  std::vector<NetDeviceContainer> vec_bridgeDev ;
+  std::vector<Ipv4InterfaceContainer> vec_apInterfaces(3);    // AP的ip地址池  
+  std::vector<NetDeviceContainer> vec_staDevices(3);          // sta的wifi网卡设备，共 #3组
+  std::vector<Ipv4InterfaceContainer> vec_staInterfaces(3);   // sta的地址池，共 #3组
 
-  NodeContainer switchesNode;
-  switchesNode.Create (nSwitch);    //2 Nodes(switch1 and switch2)-----node 0,1
+  /* 
+   * `ns3::BridgeHelper::Install(Ptr<Node> node, NetDeviceContainer c)`
+   * creates an `ns3::BridgeNetDevice` with the attributes configured by
+   * `BridgeHelper::SetDeviceAttribute()`, adds the device to the node,
+   * and attachs the given NetDevices as ports of the bridge.
+   * @param node: The node to install the device in
+   * @param c: Container of NetDevices to add as bridge posrts
+   * returns : A container holding the added net device.
+  */
+
+
+  for (uint32_t i=0; i< nAp; ++i)
+  {
+    apWifiDevices.Get(i) = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get(i));
+    // 把骨干网上的索引为i的AP的网卡和这里的apWifiDevices.Get(i)网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
+    vec_bridgeDev[i] = bridge.Install (apBackboneNodes.Get (i), NetDeviceContainer (apWifiDevices.Get(i), apCsmaDevices.Get (i) ) );
+    // assign AP IP address to bridge, not wifi
+    vec_apInterfaces[i] = ip.Assign (vec_bridgeDev[i]);
+  }
+
   
-  NodeContainer apsNode;
-  apsNode.Create (nAp);             //3 Nodes(Ap1 Ap2 and Ap3)-----node 2,3,4
-  NodeContainer wifiAp1Node = apsNode.Get (0);
-  NodeContainer wifiAp2Node = apsNode.Get (1);
-  NodeContainer wifiAp3Node = apsNode.Get (2);
 
-  NodeContainer terminalsNode;
-  terminalsNode.Create (nTerminal); //2 Nodes(terminal1 and terminal2)-----node 5,6
-  
-  NodeContainer csmaNodes;
-  csmaNodes.Add(apsNode);         // APs index : 0,1,2
-  csmaNodes.Add(terminalsNode);   // terminals index: 3,4 
+  // setup terminales (终端节点> #5 #6)
+  NodeContainer terminalsNodes;
+  terminalsNodes.Create (nTerminal);
+  // setup sta (sta节点=> [#7 #8 #9], [#10 #11 #12 #13], [#14] )
+  std::vector<NodeContainer> vec_staNodes(3);                 // sta节点，共 #3组
+  ///用for循环创建nAp组sta节点，每组的个数不一样，为 nStaAp[i]
+  for (uint32_t i=0; i< nAp; ++i)
+  {
+    vec_staNodes[i].Create (nStaAp[i]);
+  }
+ 
 
-  
-
-  NetDeviceContainer csmaDevices;
-  csmaDevices = csma.Install (csmaNodes);
-
-  // Creating every  Ap's stations
-  NodeContainer wifiAp1StaNodes;
-  wifiAp1StaNodes.Create(nAp1Station);    // node 7,8,9
-
-  NodeContainer wifiAp2StaNodes;
-  wifiAp2StaNodes.Create(nAp2Station);    // node 10,11,12,13
-
-  NodeContainer wifiAp3StaNodes;
-  wifiAp3StaNodes.Create(nAp3Station);    //  node 14
+  apBackboneNodes.Create (nAp) ;   // 创建nAp个AP节点
+  stack.Install (apBackboneNodes) ;
+  apCsmaDevices = csma.Install (apBackboneNodes); // 给AP节点安装csma网络，得到其csma网卡设备
 
   
 
-  NS_LOG_INFO ("-----Building Topology------");
-
-  // Create the csma links, from each AP & terminals to the switch
-  NetDeviceContainer csmaAp1Device, csmaAp2Device, csmaAp3Device;
-  csmaAp1Device.Add (csmaDevices.Get(0));
-  csmaAp2Device.Add (csmaDevices.Get(1));
-  csmaAp3Device.Add (csmaDevices.Get(2));
-
-  NetDeviceContainer terminalsDevice;
-  terminalsDevice.Add (csmaDevices.Get(3));
-  terminalsDevice.Add (csmaDevices.Get(4));
-  
-  NetDeviceContainer switch1Device, switch2Device;
-  NetDeviceContainer link;
-
-  //Connect ofSwitch1 to ofSwitch2  
-  link = csma.Install(NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
-  switch1Device.Add(link.Get(0));
-  switch2Device.Add(link.Get(1));
-  
-  //Connect AP1, AP2 and AP3 to ofSwitch1  
-  link = csma.Install(NodeContainer(csmaNodes.Get(0),switchesNode.Get(0)));
-  // link is a list, including the two nodes
-  // add one to apDevice{A,B,C}, the other to switch1Device
-  csmaAp1Device.Add(link.Get(0));  
-  switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(csmaNodes.Get(1),switchesNode.Get(0)));
-  csmaAp2Device.Add(link.Get(0));  
-  switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(csmaNodes.Get(2),switchesNode.Get(0)));
-  csmaAp3Device.Add(link.Get(0));
-  switch1Device.Add(link.Get(1));
+  /* 不移动的节点， 称它为 "stable_mobility" */
+  MobilityHelper stable_mobility;
+  // We want the AP to remain in a fixed position during the simulation
+  stable_mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  stable_mobility.Install (apBackboneNodes);   // AP是不动的
+  stable_mobility.Install (vec_staNodes[2]);   // 第#3组的sta是不动的
+  stable_mobility.Install (terminalsNodes);    // 两个终端节点也是不动的
+  stable_mobility.Install (switchesNodes);     // switch也是不动的
 
 
-  //Connect terminal1 and terminal2 to ofSwitch2  
-  for (int i = 3; i < 5; i++)
-    {
-      link = csma.Install(NodeContainer(csmaNodes.Get(i), switchesNode.Get(1)));
-      terminalsDevice.Add(link.Get(0));
-      switch2Device.Add(link.Get(1));
-
-    }
-
-
-  //------- Network AP1-------
-  NetDeviceContainer wifiSta1Device, wifiAp1Device;
-  Ssid ssid1 = Ssid ("ssid-AP1");
-  // We want to make sure that our stations don't perform active probing.
-  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
-  wifiSta1Device = wifi.Install(wifiPhy, wifiMac, wifiAp1StaNodes );
-  wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
-  wifiAp1Device   = wifi.Install(wifiPhy, wifiMac, wifiAp1Node);    // csmaNodes
-
-  //------- Network AP2-------
-  NetDeviceContainer wifiSta2Device, wifiAp2Device;
-  Ssid ssid2 = Ssid ("ssid-AP2");
-  // We want to make sure that our stations don't perform active probing.
-  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
-  wifiSta2Device = wifi.Install(wifiPhy, wifiMac, wifiAp2StaNodes );
-  wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
-  wifiAp2Device   = wifi.Install(wifiPhy, wifiMac, wifiAp2Node);     // csmaNodes
-
-  //------- Network AP3-------
-  NetDeviceContainer wifiSta3Device, wifiAp3Device;
-  Ssid ssid3 = Ssid ("ssid-AP3");
-  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
-  wifiSta3Device = wifi.Install(wifiPhy, wifiMac, wifiAp3StaNodes );
-  wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
-  wifiAp3Device   = wifi.Install(wifiPhy, wifiMac, wifiAp3Node);    // csmaNodes
-
-  MobilityHelper mobility;
-  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+  /* 有几个节点是不动的，暂且称它为 "moving_mobility" 
+     所有AP，两个终端节点，
+  */
+  MobilityHelper  moving_mobility;
+  // 给第#1组sta设置mobility
+  moving_mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (0),
     "MinY",      DoubleValue (25),
     "DeltaX",    DoubleValue (5),
@@ -256,11 +221,12 @@ main (int argc, char *argv[])
     "GridWidth", UintegerValue(3),
     "LayoutType",StringValue ("RowFirst")
     );    // "GridWidth", UintegerValue(3),
-  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
+  moving_mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
     "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
-  mobility.Install (wifiAp1StaNodes);
+  moving_mobility.Install (vec_staNodes[0]);
 
-  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+  // 给第#2组sta设置mobility
+  moving_mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (25),
     "MinY",      DoubleValue (25),
     "DeltaX",    DoubleValue (5),
@@ -268,218 +234,74 @@ main (int argc, char *argv[])
     "GridWidth", UintegerValue(3),
     "LayoutType",StringValue ("RowFirst")
     );    // "GridWidth", UintegerValue(3),
-  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
+  moving_mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
     "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
-  mobility.Install (wifiAp2StaNodes);
+  moving_mobility.Install (vec_staNodes[1]);
+
   
-
-  MobilityHelper mobility2;
-  // We want the AP to remain in a fixed position during the simulation
-  mobility2.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  // only stations in AP1 and AP2 is mobile, the only station in AP3 is not mobile.
-  mobility2.Install (csmaNodes);    // csmaNodes includes APs and terminals
-  mobility2.Install (wifiAp3StaNodes);
-  mobility2.Install (switchesNode);
-
-  //Create the switch netdevice,which will do the packet switching
-  Ptr<Node> switchNode1 = switchesNode.Get (0);
-  Ptr<Node> switchNode2 = switchesNode.Get (1);
-  
-  OpenFlowSwitchHelper switchHelper;
-
-  if (use_drop)
+  for (uint32_t i = 0; i < nAps; ++i)
     {
-      Ptr<ns3::ofi::DropController> controller = CreateObject<ns3::ofi::DropController> ();
-      switchHelper.Install (switchNode1, switch1Device, controller);
-      switchHelper.Install (switchNode2, switch2Device, controller);
-      //Ptr<ns3::ofi::DropController> controller2 = CreateObject<ns3::ofi::DropController> ();
-      //switchHelper.Install (switchNode2, switch2Device, controller2);
-    }
-  else
-    {
-      Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
-      if (!timeout.IsZero ()) controller->SetAttribute ("ExpirationTime", TimeValue (timeout));
-      switchHelper.Install (switchNode1, switch1Device, controller);
-      //switchHelper.Install (switchNode2, switch2Device, controller);
-      Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
-      if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
-      switchHelper.Install (switchNode2, switch2Device, controller2);
-    }
+      // 计算wifi子网的ssid
+      std::ostringstream oss;
+      oss << "wifi-default-" << i;
+      Ssid ssid = Ssid (oss.str ());
+
+      if (i==0)
+      {
+
+      }
+      MobilityHelper mobility;
+      // `BridgeHelper` : Add capability to bridge multiple LAN segments (IEEE 802.1D bridging)
+      BridgeHelper bridge;
+      WifiHelper wifi;
+      WifiMacHelper wifiMac;
+      YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
+      wifiPhy.SetChannel (wifiChannel.Create ());
+
+      sta.Create (nStas);
+      mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                     "MinX", DoubleValue (wifiX),
+                                     "MinY", DoubleValue (0.0),
+                                     "DeltaX", DoubleValue (5.0),
+                                     "DeltaY", DoubleValue (5.0),
+                                     "GridWidth", UintegerValue (1),
+                                     "LayoutType", StringValue ("RowFirst"));
 
 
-  // We enable OLSR (which will be consulted at a higher priority than
-  // the global routing) on the backbone nodes
-  NS_LOG_INFO ("Enabling OLSR routing");
-  OlsrHelper olsr;
-  
-  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+      // setup the AP.
+      mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+      mobility.Install (apBackboneNodes.Get (i));
+      wifiMac.SetType ("ns3::ApWifiMac",
+                       "Ssid", SsidValue (ssid));
+      apDev = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get (i));
 
-  Ipv4ListRoutingHelper list;
-  list.Add (ipv4RoutingHelper, 0);
-  list.Add (olsr, 10);
+      // assign AP IP address to bridge, not wifi
+      apInterface = ip.Assign (bridgeDev);
 
-  // Add internet stack to the terminals
-  InternetStackHelper internet;
-  internet.SetRoutingHelper (list); // has effect on the next Install ()
-  internet.Install (csmaNodes);
-  internet.Install (wifiAp1StaNodes);
-  internet.Install (wifiAp2StaNodes);
-  internet.Install (wifiAp3StaNodes);
+      // setup the STAs
+      stack.Install (sta);
+      mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel",
+                                 "Mode", StringValue ("Time"),
+                                 "Time", StringValue ("2s"),
+                                 "Speed", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"),
+                                 "Bounds", RectangleValue (Rectangle (wifiX, wifiX+5.0,0.0, (nStas+1)*5.0)));
+      mobility.Install (sta);
+      wifiMac.SetType ("ns3::StaWifiMac",
+                       "Ssid", SsidValue (ssid));
+      staDev = wifi.Install (wifiPhy, wifiMac, sta);
+      staInterface = ip.Assign (staDev);
 
-  NS_LOG_INFO ("-----Assigning IP Addresses.-----");
+      // save everything in containers.
+      // push_back() : 在vector尾部加入一个数据
+      staNodes.push_back (sta);
+      apDevices.push_back (apDev);
+      apInterfaces.push_back (apInterface);
+      staDevices.push_back (staDev);
+      staInterfaces.push_back (staInterface);
 
-  Ipv4AddressHelper csmaIpAddress;
-  csmaIpAddress.SetBase ("192.168.0.0", "255.255.255.0");
-
-  // for Ap1,Ap2 and Ap3
-  csmaIpAddress.Assign (csmaAp1Device);    // csmaDevices
-  csmaIpAddress.Assign (csmaAp2Device); 
-  //csmaIpAddress.Assign (csmaAp3Device);
-  Ipv4InterfaceContainer csmaAp3Interface;
-  csmaAp3Interface = csmaIpAddress.Assign (csmaAp3Device);
-  Ipv4InterfaceContainer h1h2Interface;
-  h1h2Interface = csmaIpAddress.Assign (terminalsDevice); 
-
-
-  Ipv4AddressHelper ap1IpAddress;
-  ap1IpAddress.SetBase ("10.0.1.0", "255.255.255.0");
-  NetDeviceContainer wifi1Device = wifiSta1Device;
-  wifi1Device.Add(wifiAp1Device);
-  Ipv4InterfaceContainer interfaceA ;
-  interfaceA = ap1IpAddress.Assign (wifi1Device);
-  
-
-  Ipv4AddressHelper ap2IpAddress;
-  ap2IpAddress.SetBase ("10.0.2.0", "255.255.255.0");
-  NetDeviceContainer wifi2Device = wifiSta2Device;
-  wifi2Device.Add(wifiAp2Device);
-  Ipv4InterfaceContainer interfaceB ;
-  interfaceB = ap2IpAddress.Assign (wifi2Device);
-
-
-  Ipv4AddressHelper ap3IpAddress;
-  ap3IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
-  //NetDeviceContainer wifi3Device = wifiSta3Device;
-  //wifi3Device.Add(wifiAp3Device);
-  //Ipv4InterfaceContainer interfaceC ;
-  //interfaceC = ap3IpAddress.Assign (wifi3Device);
-  Ipv4InterfaceContainer apWifiInterfaceC ;
-  Ipv4InterfaceContainer staWifiInterfaceC ;
-  apWifiInterfaceC  = ap3IpAddress.Assign (wifiAp3Device);
-  staWifiInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
-
-
-  /*
-  // obtain a node pointer "node"
-  Ipv4NatHelper natHelper ;
-  Ptr<Ipv4Nat> nat = natHelper.Install (apsNode.Get (2));    //AP3
-  // the Ipv4Interface indices are used to refer to the NAT interfaces
-  nat->SetInside (1);
-  nat->SetOutside (2);
-  // NAT is configured to block all traffic that does not match one of the configured rules. 
-  // The user would configure rules next, such as follows:
-  // specify local and global IP addresses
-  Ipv4StaticNatRule rule (Ipv4Address ("10.0.3.2"), Ipv4Address ("192.168.0.102"));
-  nat->AddStaticRule (rule);
-
-  // the following code will help printing the NAT rules to a file nat.rules from the stream:
-
-  Ptr<OutputStreamWrapper> natStream = Create<OutputStreamWrapper> ("nat.rules", std::ios::out);
-  nat->PrintTable (natStream);
-  */
-
-  // -----for StaticRouting(its very useful)-----
-  
-  Ptr<Ipv4> ipv4Ap3 = apsNode.Get(2)->GetObject<Ipv4> ();
-  Ptr<Ipv4> ipv4H2 = terminalsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
-  Ptr<Ipv4> ipv4Ap3Sta = wifiAp3StaNodes.Get(0)->GetObject<Ipv4> ();    // node 14
-
-  //Ipv4StaticRoutingHelper ipv4RoutingHelper;   // moved this code ahead
-  // the intermedia AP3
-  //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3);
-  //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
-  //staticRoutingAp3->SetDefaultRoute(staWifiInterfaceC.GetAddress(0), 1);
-  // the server
-  Ptr<Ipv4StaticRouting> staticRoutingH2 = ipv4RoutingHelper.GetStaticRouting (ipv4H2);
-  staticRoutingH2->SetDefaultRoute(csmaAp3Interface.GetAddress(0), 1);
-  // the client
-  Ptr<Ipv4StaticRouting> staticRoutingAp3Sta = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3Sta);
-  staticRoutingAp3Sta->SetDefaultRoute(apWifiInterfaceC.GetAddress(0), 1);
-  
-
-  // Add applications
-  NS_LOG_INFO ("-----Creating Applications.-----");
-  uint16_t port = 9;   // Discard port (RFC 863)
-  /*
-    `OnOffHelper` is for TCP
-    `UdpEchoServerHelper` is for UDP
-  */
-  UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
-  serverApps.Start (Seconds(1.0));  
-  serverApps.Stop (stopTime);  
-  
-
-  UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (4));    // options:1,2,4,5
-  // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
-  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
-  clientApps.Start (Seconds(2.0));  
-  clientApps.Stop (stopTime);
-  
-  // GlobalRouting does NOT work with Wi-Fi.
-  // https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
-  //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  Simulator::Stop (stopTime);
-
-  NS_LOG_INFO ("-----Configuring Tracing.-----");
-
-  //
-  // Configure tracing of all enqueue, dequeue, and NetDevice receive events.
-  // Trace output will be sent to the file as below
-  //
-  if (tracing)
-    {
-      AsciiTraceHelper ascii;
-      //csma.EnablePcapAll("goal-topo");
-      csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
-      wifiPhy.EnablePcap ("goal-topo-ap1-wifi", wifiAp1Device);
-      wifiPhy.EnablePcap ("goal-topo-ap2-wifi", wifiAp2Device);
-      wifiPhy.EnablePcap ("goal-topo-ap3-wifi", wifiAp3Device);
-      wifiPhy.EnablePcap ("goal-topo-ap3Sta1-wifi", wifiSta3Device);
-      // WifiMacHelper doesnot have `EnablePcap()` method
-      csma.EnablePcap ("goal-topo-switch1-csma", switch1Device);
-      csma.EnablePcap ("goal-topo-switch1-csma", switch2Device);
-      csma.EnablePcap ("goal-topo-ap1-csma", csmaAp1Device);
-      csma.EnablePcap ("goal-topo-ap2-csma", csmaAp2Device);
-      csma.EnablePcap ("goal-topo-ap3-csma", csmaAp3Device);
-      csma.EnablePcap ("goal-topo-H1-csma", terminalsDevice.Get(0));
-      csma.EnablePcap ("goal-topo-H2-csma", terminalsDevice.Get(1));
+      wifiX += 20.0;
     }
 
-  //
-  // Also configure some tcpdump traces; each interface will be traced.
-  // The output files will be named:
-  //     openflow-switch-<nodeId>-<interfaceId>.pcap
-  // and can be read by the "tcpdump -r" command (use "-tt" option to
-  // display timestamps correctly)
-  // eg. tcpdump -nn -tt -r xxx.pcap
-  //
-  //csma.EnablePcapAll ("goal-topo", false);
-
-  AnimationInterface anim ("goal-topo.xml");
-  anim.SetConstantPosition(switchNode1,30,10);             // s1-----node 0
-  anim.SetConstantPosition(switchNode2,65,10);             // s2-----node 1
-  anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
-  anim.SetConstantPosition(apsNode.Get(1),30,20);      // Ap2----node 3
-  anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4
-  anim.SetConstantPosition(terminalsNode.Get(0),60,25);    // H1-----node 5
-  anim.SetConstantPosition(terminalsNode.Get(1),65,25);    // H2-----node 6
-  anim.SetConstantPosition(wifiAp3StaNodes.Get(0),55,30);  //   -----node 14
-
-  anim.EnablePacketMetadata();   // to see the details of each packet
 
 
   NS_LOG_INFO ("-----Running Simulation.-----");
