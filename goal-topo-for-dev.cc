@@ -52,13 +52,12 @@
 using namespace ns3;
 
 // 用于命令行操作 `$ export NS_LOG=GoalTopoScript=info`
-NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
+NS_LOG_COMPONENT_DEFINE ("GoalTopoForDevelopmentScript");
 
 
 bool verbose = false;
-bool use_drop = false;
 bool tracing  = true;
-ns3::Time timeout = ns3::Seconds (0);
+
 
 /*
  * 是否显示详细信息
@@ -83,7 +82,7 @@ main (int argc, char *argv[])
   //uint32_t nAp3Station = nStaAp[2];
 
 
-  ns3::Time stopTime = ns3::Seconds (5.0);
+  ns3::Time stopTime = ns3::Seconds (10.0);
 
   //这里初始化Ssid动态数组的值，方便后面好迭代。
   std::vector<Ssid> ssid = { Ssid ("Ssid-AP1"), Ssid ("Ssid-AP2"), Ssid ("Ssid-AP3") } ;
@@ -92,16 +91,9 @@ main (int argc, char *argv[])
 
 
   CommandLine cmd;
-  cmd.AddValue ("nAp1Station", "Number of wifi STA devices of AP1", nAp1Station);
-  cmd.AddValue ("nAp2Station", "Number of wifi STA devices of AP2", nAp2Station);
-  cmd.AddValue ("nAp3Station", "Number of wifi STA devices of AP3", nAp3Station);
 
   cmd.AddValue ("v", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
   cmd.AddValue ("verbose", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
-  cmd.AddValue ("d", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
-  cmd.AddValue ("drop", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
-  cmd.AddValue ("t", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
-  cmd.AddValue ("timeout", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
 
   cmd.Parse (argc, argv);
 
@@ -133,8 +125,23 @@ main (int argc, char *argv[])
   
   InternetStackHelper internet ;
   CsmaHelper csma ;
-  Ipv4AddressHelper ip;
-  ip.SetBase ("192.168.0.0", "255.255.255.0" );
+  
+  Ipv4AddressHelper ip_csma;
+  ip_csma.SetBase ("192.168.0.0", "255.255.255.0") ;
+  // AP#1:  192.168.0.1
+  // AP#2:  192.168.0.2
+  // AP#3:  192.168.0.3
+  // 终端#1: 192.168.0.4
+  // 终端#2: 192.168.0.5
+
+  Ipv4AddressHelper ip_wifi;
+  ip_wifi.SetBase ("10.0.0.0", "255.255.255.0") ;
+  // AP#1:   10.0.0.1
+  // AP#2:   10.0.0.2
+  // AP#3:   10.0.0.3
+  // wifi#1: 10.0.0.7-9
+  // wifi#2: 10.0.0.10-13
+  // wifi#3: 10.0.0.14
 
 
 
@@ -162,47 +169,30 @@ main (int argc, char *argv[])
 
 
   ////////////// 网卡设备  ///////////////////
-  std::vector<NetDeviceContainer> vec_apCsmaDevices(2);       // AP的骨干网中的csma网卡设备,由于每个AP也都要连接好几个网卡设备，所以也为vector
-  NetDeviceContainer apWifiDevices;                           // AP的wifi网中的wifi网卡设备
+  std::vector<NetDeviceContainer> vec_apCsmaDevices(3);       // AP的骨干网中的csma网卡设备,由于每个AP也都要连接好几个网卡设备，所以也为vector
+  NetDeviceContainer                  apWifiDevices;          // AP的wifi网中的wifi网卡设备
   std::vector<NetDeviceContainer> vec_bridgeDevices(3) ;      // 用于分配ip的桥接网卡设备  PS: 3为nAp的值
   std::vector<NetDeviceContainer> vec_staDevices(3);          // sta的wifi网卡设备，共 #3组
   std::vector<NetDeviceContainer> vec_terminalsDevices(2);    // terminal节点的csma网卡
   std::vector<NetDeviceContainer> vec_switchesDevices(2);     // 两个switch的csma网卡,由于每个switch的网卡都要连接好几个设备，所以这里得用一个vector
   
   /////////////// IP地址池  /////////////////
-  std::vector<Ipv4InterfaceContainer> vec_apInterfaces(3);    // AP的ip地址池  
-  std::vector<Ipv4InterfaceContainer> vec_staInterfaces(3);   // sta的ip地址池，共 #3组
+  std::vector<Ipv4InterfaceContainer> vec_csma_apInterfaces(3);           // AP的csma网络ip地址池
+  std::vector<Ipv4InterfaceContainer> vec_csma_terminalInterfaces(2);     // 终端的csma网络ip池
+  std::vector<Ipv4InterfaceContainer> vec_wifi_apInterfaces(3);           // AP的wifi网络ip地址池  
+  std::vector<Ipv4InterfaceContainer> vec_wifi_staInterfaces(3);          // sta的wifi网络ip地址池，共 #3组
 
   // 给第i个AP节点安装csma，得到第i个节点的csma网卡
   for (uint32_t i=0; i< nAp; ++i)
   {
-    vec_apCsmaDevices.Get(i) = csma.Install (apBackboneNodes.Get(i));
+    vec_apCsmaDevices[i] = csma.Install (apBackboneNodes.Get(i));
   }
   // 给第i个终端节点安装csma，得到第i个终端节点的csma网卡
   for (uint32_t i=0; i<nTerminal; ++i)
   {
-    vec_terminalsDevices.Get(i) = csma.Install (terminalsNodes.Get(i));
+    vec_terminalsDevices[i] = csma.Install (terminalsNodes.Get(i));
   }
 
-  /* 
-   * `ns3::BridgeHelper::Install(Ptr<Node> node, NetDeviceContainer c)`
-   *
-   * creates an `ns3::BridgeNetDevice` with the attributes configured by
-   * `BridgeHelper::SetDeviceAttribute()`, adds the device to the node,
-   * and attachs the given NetDevices as ports of the bridge.
-   * @param node: The node to install the device in
-   * @param c: Container of NetDevices to add as bridge posrts
-   * returns : A container holding the added net device.
-  */
-  for (uint32_t i=0; i< nAp; ++i)
-  {
-    wifiMac.SetType ("ns3::ApWifiMac", "Ssid", ssid[i] );
-    apWifiDevices.Get(i) = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get(i));
-    // 把骨干网上的索引为i的AP的网卡和这里的apWifiDevices.Get(i)网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
-    vec_bridgeDevices[i] = bridge.Install (apBackboneNodes.Get (i), NetDeviceContainer (apWifiDevices.Get(i), apCsmaDevices.Get (i) ) );
-    // 把给AP的ip给bridge, 而不是wifi
-    vec_apInterfaces[i] = ip.Assign (vec_bridgeDevices[i]);
-  }
 
 
 
@@ -251,24 +241,6 @@ main (int argc, char *argv[])
 
 
 
-////////////////////////////////////////////////////
-///// 给sta节点分配其所属的 SSID，安装wifi协议，分配IP地址
-////////////////////////////////////////////////////
-
-  for (uint32_t i = 0; i < nAps; ++i)
-  {
-      wifiMac.SetType ("ns3::StaWifiMac",
-                       "Ssid", ssid[i],
-                       "ActiveProbing", BooleanValue (false) );
-      vec_staDevices[i] = wifi.Install (wifiPhy, wifiMac, vec_staNodes[i] );
-      vec_staInterfaces[i] = ip.Assign (vec_staDevices[i] );
-
-      // wifiX += 20.0;
-  }
-
-  //TODO 给终端节点安装IP
-
-
 
 ////////////////////////////////////////////////////////////
 ///////////-------switch1与switch2-----------////////////////
@@ -285,7 +257,7 @@ main (int argc, char *argv[])
   // 将link的第一个元素给第一个switch的网卡， 将link的第二个元素给第二个switch的网卡
   for (uint32_t i = 0; i < nSwitch; ++i)
   {
-    vec_switchesDevices.Get(i).Add( link.Get(i) );
+    vec_switchesDevices[i].Add( link.Get(i) );
   }
   
   //Connect AP1, AP2 and AP3 to ofSwitch1  
@@ -294,9 +266,9 @@ main (int argc, char *argv[])
   {
       link = csma.Install (NodeContainer (apBackboneNodes.Get(i), switchesNodes.Get(0)) );  // switch1
       // 将link的第一个元素加到第i个AP节点的csma网卡container中
-      vec_apCsmaDevices.Get(i).Add( link.Get(0) );
+      vec_apCsmaDevices[i].Add( link.Get(0) );
       // 将link的第二个元素加到第1个switch网卡的container中
-      vec_switchesDevices.Get(0).Add( link.Get(1));
+      vec_switchesDevices[0].Add( link.Get(1));
   }
 
   //Connect terminal1 and terminal2 to ofSwitch2 
@@ -306,9 +278,9 @@ main (int argc, char *argv[])
     * 将link.Get(0)给 第i+1个终端的csma网卡Container
     * 将link.Get(1)给 switch2的csma网卡Container
     */
-    link = csma.Install( NodeContainer(vec_terminalsDevices.Get(i), switchesNodes.Get(1)) );   // switch2
-    vec_terminalsDevices.Get(i).Add( link.Get(0) );
-    vec_switchesDevices.Get(1).Add( link.Get(1) );
+    link = csma.Install( NodeContainer(vec_terminalsDevices[i], switchesNodes.Get(1)) );   // switch2
+    vec_terminalsDevices[i].Add( link.Get(0) );
+    vec_switchesDevices[1].Add( link.Get(1) );
   }
 
 
@@ -326,6 +298,8 @@ main (int argc, char *argv[])
   Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
   switchHelper.Install (switchNode2, switch2Device, controller2);
 
+
+
 ///////////////////////////////////////////////////////////////////////////
 /////////////////////////// Internet and IP address assigning /////////////
 //////////////////////////////////////////////////////////////////////////
@@ -337,13 +311,121 @@ main (int argc, char *argv[])
 
 
 
+/////////////////////////////////////////////////////////////////////////////
+/////////////////// ---------------- `192.168.0.0/24`--------------//////////
+/////////////////////////////////////////////////////////////////////////////
+  // 先依次给AP的csma网卡分配
+  // ip: 192.168.0.1-3
+  for (uint32_t i = 0; i < nAps; ++i)
+  {
+    vec_csma_apInterfaces =  ip_csma.Assign (vec_apCsmaDevices[i]);
+  }
+  // 再依次两个终端节点分配
+  // ip: 192.168.0.4-5
+  for (uint32_t i = 0; i < nTerminal; ++i)
+  {
+    vec_csma_terminalInterfaces =  ip_csma.Assign (vec_terminalsDevices[i]);
+  }
+
+/////////////////////////////////////////////////////////////////////////////
+/////////////////// ---------------- `10.0.0.0/24`--------------//////////
+/////////////////////////////////////////////////////////////////////////////
+
+  /* 
+   * `ns3::BridgeHelper::Install(Ptr<Node> node, NetDeviceContainer c)`
+   *
+   * creates an `ns3::BridgeNetDevice` with the attributes configured by
+   * `BridgeHelper::SetDeviceAttribute()`, adds the device to the node,
+   * and attachs the given NetDevices as ports of the bridge.
+   * @param node: The node to install the device in
+   * @param c: Container of NetDevices to add as bridge posrts
+   * returns : A container holding the added net device.
+  */
+  
+  for (uint32_t i=0; i< nAp; ++i)
+  {
+    wifiMac.SetType ("ns3::ApWifiMac", "Ssid", ssid[i] );
+    apWifiDevices.Get(i) = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get(i));
+    // 把骨干网上的索引为i的AP的csma网卡和这里的apWifiDevices.Get(i)的wifi网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
+    vec_bridgeDevices[i] = bridge.Install (apBackboneNodes.Get (i), NetDeviceContainer (apWifiDevices.Get(i), apCsmaDevices.Get (i) ) );
+    // 把给AP的ip给bridge, 而不是wifi
+    vec_wifi_apInterfaces[i] = ip_wifi.Assign (vec_bridgeDevices[i]);
+  }
 
 
-  NS_LOG_INFO ("-----Running Simulation.-----");
+///// 给sta节点分配其所属的 SSID，安装wifi协议，分配IP地址
+
+  for (uint32_t i = 0; i < nAps; ++i)
+  {
+      wifiMac.SetType ("ns3::StaWifiMac", "Ssid", ssid[i], "ActiveProbing", BooleanValue (false) );
+      vec_staDevices[i] = wifi.Install (wifiPhy, wifiMac, vec_staNodes[i] );
+      vec_wifi_staInterfaces[i] = ip_wifi.Assign (vec_staDevices[i] );
+
+  }
+
+
+  // Add applications
+  NS_LOG_INFO ("----------------------Creating Applications.-------------------");
+  
+  ///////////// Create one udpServer application on node one.////////////////
+  uint16_t port = 8000;
+  UdpServerHelper udpServer (port);
+
+  ApplicationContainer server_apps;
+  server_apps = udpServer.Install (terminalsNodes.Get(1));   // node #6 (192.168.0.x) (第二个固定终端节点) 作为 UdpServer
+
+  server_apps.Start (Seconds (1.0));
+  server_apps.Stop (Seconds (10.0));
+
+
+  /////////////// Create one UdpClient application to send UDP datagrams///////
+
+  // 这个interfaces的第2个元素，然后得到它的第一个ip地址(其实只有一个ip) 
+  UdpClientHelper client (vec_csma_terminalInterfaces[1].GetAddress(0), port);        // dest: IP,port
+
+  client.SetAttribute ("MaxPackets", UintegerValue (320));       // 最大数据包数
+  client.SetAttribute ("Interval", TimeValue (Time ("0.01")));   // 时间间隔
+  client.SetAttribute ("PacketSize", UintegerValue (1024));      // 包大小
+
+  ApplicationContainer client_apps;
+  client_apps = client.Install (wifiAp1StaNodes.Get (2));    // node #9 (10.0.0.x)  也就是AP1下的9号节点
+
+  client_apps.Start (Seconds (2.0));
+  client_apps.Stop (Seconds (10.0));
+
+  // 设置Simulator停止的时间
+  Simulator::Stop (stopTime);
+
+
+  NS_LOG_INFO ("---------------------Configuring Tracing.-----------------------");
+  
+  if (tracing)
+  {
+    AsciiTraceHelper ascii;
+    //csma.EnablePcapAll("goal-topo");
+    csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
+    /*    `YansWifiPhyHelper`的 Enablepcap()方法，第二个参数可接收NetDeviceContainer，也可以为Ptr<NetDevice>，还可以是  NodeContainer    */
+    wifiPhy.EnablePcap ("goal-topo-ap1-wifi", vec_bridgeDevices[0]); 
+    wifiPhy.EnablePcap ("goal-topo-ap2-wifi", vec_bridgeDevices[1]);
+    wifiPhy.EnablePcap ("goal-topo-ap3-wifi", vec_bridgeDevices[2]);
+    wifiPhy.EnablePcap ("goal-topo-ap1-sta3-wifi", vec_staDevices[0].Get(2));    // 这里因为是让ap1里面的sta3作为UdpClient( #9 节点)，所以要记录它的流量
+    // WifiMacHelper doesnot have `EnablePcap()` method
+    csma.EnablePcap ("goal-topo-switch1-csma", vec_switchesDevices[0]);           // switch1的csma网卡
+    csma.EnablePcap ("goal-topo-switch2-csma", vec_switchesDevices[1]);           // switch2的csma网卡
+    csma.EnablePcap ("goal-topo-ap1-csma", vec_apCsmaDevices[0]);
+    csma.EnablePcap ("goal-topo-ap2-csma", vec_apCsmaDevices[1]);
+    csma.EnablePcap ("goal-topo-ap3-csma", vec_apCsmaDevices[2]);
+    csma.EnablePcap ("goal-topo-H1-csma", vec_terminalsDevices[0] );
+    csma.EnablePcap ("goal-topo-H2-csma", vec_terminalsDevices[1] );
+  }
+
+
+
+  NS_LOG_INFO ("----------------------Running Simulation.-----------------------");
   Simulator::Run ();
   Simulator::Destroy ();
-  NS_LOG_INFO ("-----Done.-----");
+  NS_LOG_INFO ("--------------------------Done.---------------------------------");
   #else
-  NS_LOG_INFO ("-----NS-3 OpenFlow is not enabled. Cannot run simulation.-----");
+  NS_LOG_INFO ("-----NS-3 OpenFlow is not enabled. Cannot run simulation.-------");
   #endif // NS3_OPENFLOW
 }
