@@ -151,7 +151,7 @@ int main (int argc, char *argv[])
        * returns : A container holding the added net device.
        */
       bridgeDev = bridge.Install (backboneNodes.Get (i), NetDeviceContainer (apDev, backboneDevices.Get (i)));
-      //以上把骨干网上的索引为i的ap的网卡和这里的apDev网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
+      //以上把骨干网上的索引为i的ap( 即第i+1个AP )的csma网卡和这里的wifi网卡apDev加到骨干网的这个索引为i的节点上，即第i+1个AP上
 
       // assign AP IP address to bridge, not wifi
       apInterface = ip.Assign (bridgeDev);

@@ -85,7 +85,13 @@ main (int argc, char *argv[])
   ns3::Time stopTime = ns3::Seconds (10.0);
 
   //这里初始化Ssid动态数组的值，方便后面好迭代。
-  std::vector<Ssid> ssid = { Ssid ("Ssid-AP1"), Ssid ("Ssid-AP2"), Ssid ("Ssid-AP3") } ;
+  std::vector<Ssid> ssid ;
+  //error: in C++98 ‘ssid’ must be initialized by constructor, not by ‘{...}’
+  // = { Ssid ("Ssid-AP1"), Ssid ("Ssid-AP2"), Ssid ("Ssid-AP3") } ; 
+  ssid[0] = Ssid("Ssid-AP1") ;
+  ssid[1] = Ssid("Ssid-AP2") ;
+  ssid[2] = Ssid("Ssid-AP3") ;
+
 
   #ifdef NS3_OPENFLOW
 
@@ -113,7 +119,8 @@ main (int argc, char *argv[])
 //////////////////////////////////////////
 
   WifiHelper            wifi;
-  WifiMacHelper         wifiMac;
+  NqosWifiMacHelper     wifiMac;
+  //WifiMacHelper         wifiMac;
   YansWifiPhyHelper     wifiPhy = YansWifiPhyHelper::Default();
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
@@ -262,7 +269,7 @@ main (int argc, char *argv[])
   
   //Connect AP1, AP2 and AP3 to ofSwitch1  
   // link is a list, including the two nodes
-  for (uint32_t i = 0; i < nAps; ++i)
+  for (uint32_t i = 0; i < nAp; ++i)
   {
       link = csma.Install (NodeContainer (apBackboneNodes.Get(i), switchesNodes.Get(0)) );  // switch1
       // 将link的第一个元素加到第i个AP节点的csma网卡container中
@@ -316,15 +323,15 @@ main (int argc, char *argv[])
 /////////////////////////////////////////////////////////////////////////////
   // 先依次给AP的csma网卡分配
   // ip: 192.168.0.1-3
-  for (uint32_t i = 0; i < nAps; ++i)
+  for (uint32_t i = 0; i < nAp; ++i)
   {
-    vec_csma_apInterfaces =  ip_csma.Assign (vec_apCsmaDevices[i]);
+    vec_csma_apInterfaces[i] =  ip_csma.Assign (vec_apCsmaDevices[i]);
   }
   // 再依次两个终端节点分配
   // ip: 192.168.0.4-5
   for (uint32_t i = 0; i < nTerminal; ++i)
   {
-    vec_csma_terminalInterfaces =  ip_csma.Assign (vec_terminalsDevices[i]);
+    vec_csma_terminalInterfaces[i] =  ip_csma.Assign (vec_terminalsDevices[i]);
   }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -355,7 +362,7 @@ main (int argc, char *argv[])
 
 ///// 给sta节点分配其所属的 SSID，安装wifi协议，分配IP地址
 
-  for (uint32_t i = 0; i < nAps; ++i)
+  for (uint32_t i = 0; i < nAp; ++i)
   {
       wifiMac.SetType ("ns3::StaWifiMac", "Ssid", ssid[i], "ActiveProbing", BooleanValue (false) );
       vec_staDevices[i] = wifi.Install (wifiPhy, wifiMac, vec_staNodes[i] );
@@ -384,7 +391,7 @@ main (int argc, char *argv[])
   UdpClientHelper client (vec_csma_terminalInterfaces[1].GetAddress(0), port);        // dest: IP,port
 
   client.SetAttribute ("MaxPackets", UintegerValue (320));       // 最大数据包数
-  client.SetAttribute ("Interval", TimeValue (Time ("0.01")));   // 时间间隔
+  client.SetAttribute ("Interval", TimeValue (Time ("0.5")));   // 时间间隔 0.01太小了吧，包不会太多了吗
   client.SetAttribute ("PacketSize", UintegerValue (1024));      // 包大小
 
   ApplicationContainer client_apps;
