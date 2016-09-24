@@ -412,20 +412,20 @@ main (int argc, char *argv[])
   uint16_t port = 9;   // Discard port (RFC 863)
   /*
     `OnOffHelper` is for TCP
-    `UdpEchoServerHelper` is for UDP
+    `UdpServerHelper` is for UDP
   */
-  UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
-  serverApps.Start (Seconds(1.0));  
-  serverApps.Stop (stopTime);  
+  UdpServerHelper udpServer (port);  // for the server side, only one param(port) is specified
+  ApplicationContainer server_apps = udpServer.Install (terminalsNode.Get(1));
+  server_apps.Start (Seconds(1.0));  
+  server_apps.Stop (stopTime);  
   
 
-  UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (4));    // options:1,2,4,5
+  UdpClientHelper udpClient (h1h2Interface.GetAddress(1) ,port);
+  udpClient.SetAttribute ("MaxPackets", UintegerValue (4));    // options:1,2,4,5
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
-  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
+  udpClient.SetAttribute ("Interval", TimeValue (Seconds (0.5)));  
+  udpClient.SetAttribute ("PacketSize", UintegerValue (1024));  
+  ApplicationContainer clientApps = udpClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (stopTime);
   
