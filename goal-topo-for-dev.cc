@@ -61,7 +61,7 @@ bool tracing  = true;
 
 /*
  * 是否显示详细信息
-*/
+ */
 bool
 SetVerbose (std::string value)
 {
@@ -170,9 +170,9 @@ main (int argc, char *argv[])
   std::vector<NodeContainer> vec_staNodes(3);                 // sta节点，共 #3组
   ///用for循环创建nAp组sta节点，每组的个数不一样，为 nStaAp[i]
   for (uint32_t i=0; i< nAp; ++i)
-  {
-    vec_staNodes[i].Create (nStaAp[i]);
-  }
+    {
+      vec_staNodes[i].Create (nStaAp[i]);
+    }
 
 
   ////////////// 网卡设备  ///////////////////
@@ -191,14 +191,14 @@ main (int argc, char *argv[])
 
   // 给第i个AP节点安装csma，得到第i个节点的csma网卡
   for (uint32_t i=0; i< nAp; ++i)
-  {
-    vec_apCsmaDevices[i] = csma.Install (apBackboneNodes.Get(i));
-  }
+    {
+      vec_apCsmaDevices[i] = csma.Install (apBackboneNodes.Get(i));
+    }
   // 给第i个终端节点安装csma，得到第i个终端节点的csma网卡
   for (uint32_t i=0; i<nTerminal; ++i)
-  {
-    vec_terminalsDevices[i] = csma.Install (terminalsNodes.Get(i));
-  }
+    {
+      vec_terminalsDevices[i] = csma.Install (terminalsNodes.Get(i));
+    }
 
 
 
@@ -217,8 +217,10 @@ main (int argc, char *argv[])
   stable_mobility.Install (switchesNodes);     // switch也是不动的
 
 
-  /* 有几个节点是移动的，暂且称它为 "moving_mobility" 
-  */
+  /* 
+   * 有几个节点是移动的，暂且称它为 "moving_mobility" 
+   */
+
   MobilityHelper  moving_mobility;
   // 给第#1组sta设置mobility
   moving_mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
@@ -263,32 +265,32 @@ main (int argc, char *argv[])
   link = csma.Install(NodeContainer(switchesNodes.Get(0),switchesNodes.Get(1)));    // switch1 和switch2
   // 将link的第一个元素给第一个switch的网卡， 将link的第二个元素给第二个switch的网卡
   for (uint32_t i = 0; i < nSwitch; ++i)
-  {
-    vec_switchesDevices[i].Add( link.Get(i) );
-  }
+    {
+      vec_switchesDevices[i].Add( link.Get(i) );
+    }
   
   //Connect AP1, AP2 and AP3 to ofSwitch1  
   // link is a list, including the two nodes
   for (uint32_t i = 0; i < nAp; ++i)
-  {
+    {
       link = csma.Install (NodeContainer (apBackboneNodes.Get(i), switchesNodes.Get(0)) );  // switch1
       // 将link的第一个元素加到第i个AP节点的csma网卡container中
       vec_apCsmaDevices[i].Add( link.Get(0) );
       // 将link的第二个元素加到第1个switch网卡的container中
       vec_switchesDevices[0].Add( link.Get(1));
-  }
+    }
 
   //Connect terminal1 and terminal2 to ofSwitch2 
   for (uint32_t i = 0; i < nTerminal; i++)
-  {
+    {
     /* 给终端节点和switch2组成的NodeContainer安装csma，然后终端的csma卡加入这一网卡。
-    * 将link.Get(0)给 第i+1个终端的csma网卡Container
-    * 将link.Get(1)给 switch2的csma网卡Container
-    */
-    link = csma.Install( NodeContainer(terminalsNodes.Get(i), switchesNodes.Get(1)) );   // switch2
-    vec_terminalsDevices[i].Add( link.Get(0) );
-    vec_switchesDevices[1].Add( link.Get(1) );
-  }
+     * 将link.Get(0)给 第i+1个终端的csma网卡Container
+     * 将link.Get(1)给 switch2的csma网卡Container
+     */
+      link = csma.Install( NodeContainer(terminalsNodes.Get(i), switchesNodes.Get(1)) );   // switch2
+      vec_terminalsDevices[i].Add( link.Get(0) );
+      vec_switchesDevices[1].Add( link.Get(1) );
+    }
 
 
 
@@ -324,15 +326,15 @@ main (int argc, char *argv[])
   // 先依次给AP的csma网卡分配
   // ip: 192.168.0.1-3
   for (uint32_t i = 0; i < nAp; ++i)
-  {
-    vec_csma_apInterfaces[i] =  ip_csma.Assign (vec_apCsmaDevices[i]);
-  }
+    {
+      vec_csma_apInterfaces[i] =  ip_csma.Assign (vec_apCsmaDevices[i]);
+    }
   // 再依次两个终端节点分配
   // ip: 192.168.0.4-5
   for (uint32_t i = 0; i < nTerminal; ++i)
-  {
-    vec_csma_terminalInterfaces[i] =  ip_csma.Assign (vec_terminalsDevices[i]);
-  }
+    {
+      vec_csma_terminalInterfaces[i] =  ip_csma.Assign (vec_terminalsDevices[i]);
+    }
 
 /////////////////////////////////////////////////////////////////////////////
 /////////////////// ---------------- `10.0.0.0/24`--------------//////////
@@ -347,28 +349,28 @@ main (int argc, char *argv[])
    * @param node: The node to install the device in
    * @param c: Container of NetDevices to add as bridge posrts
    * returns : A container holding the added net device.
-  */
+   */
   
   for (uint32_t i=0; i< nAp; ++i)
-  {
-    wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue(ssid[i]) );
-    vec_apWifiDevices[i] = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get(i));
-    // 把骨干网上的索引为i的AP的csma网卡和这里的vec_apWifiDevices.Get(i)的wifi网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
-    vec_bridgeDevices[i] = bridge.Install (apBackboneNodes.Get (i), NetDeviceContainer (vec_apWifiDevices[i], vec_apCsmaDevices[i] ) );
-    // 把给AP的ip给bridge, 而不是wifi
-    vec_wifi_apInterfaces[i] = ip_wifi.Assign (vec_bridgeDevices[i]);
-  }
+    {
+      wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue(ssid[i]) );
+      vec_apWifiDevices[i] = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get(i));
+      // 把骨干网上的索引为i的AP的csma网卡和这里的vec_apWifiDevices.Get(i)的wifi网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
+      vec_bridgeDevices[i] = bridge.Install (apBackboneNodes.Get (i), NetDeviceContainer (vec_apWifiDevices[i], vec_apCsmaDevices[i] ) );
+      // 把给AP的ip给bridge, 而不是wifi
+      vec_wifi_apInterfaces[i] = ip_wifi.Assign (vec_bridgeDevices[i]);
+    }
 
 
 ///// 给sta节点分配其所属的 SSID，安装wifi协议，分配IP地址
 
   for (uint32_t i = 0; i < nAp; ++i)
-  {
+    {
       wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue(ssid[i]), "ActiveProbing", BooleanValue (false) );
       vec_staDevices[i] = wifi.Install (wifiPhy, wifiMac, vec_staNodes[i] );
       vec_wifi_staInterfaces[i] = ip_wifi.Assign (vec_staDevices[i] );
 
-  }
+    }
 
 
   // Add applications
@@ -407,24 +409,37 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("---------------------Configuring Tracing.-----------------------");
   
   if (tracing)
-  {
-    AsciiTraceHelper ascii;
-    //csma.EnablePcapAll("goal-topo");
-    csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
-    /*    `YansWifiPhyHelper`的 Enablepcap()方法，第二个参数可接收NetDeviceContainer，也可以为Ptr<NetDevice>，还可以是  NodeContainer    */
-    wifiPhy.EnablePcap ("goal-topo-ap1-wifi", vec_bridgeDevices[0]); 
-    wifiPhy.EnablePcap ("goal-topo-ap2-wifi", vec_bridgeDevices[1]);
-    wifiPhy.EnablePcap ("goal-topo-ap3-wifi", vec_bridgeDevices[2]);
-    wifiPhy.EnablePcap ("goal-topo-ap1-sta3-wifi", vec_staDevices[0].Get(2));    // 这里因为是让ap1里面的sta3作为UdpClient( #9 节点)，所以要记录它的流量
-    // WifiMacHelper doesnot have `EnablePcap()` method
-    csma.EnablePcap ("goal-topo-switch1-csma", vec_switchesDevices[0]);           // switch1的csma网卡
-    csma.EnablePcap ("goal-topo-switch2-csma", vec_switchesDevices[1]);           // switch2的csma网卡
-    csma.EnablePcap ("goal-topo-ap1-csma", vec_apCsmaDevices[0]);
-    csma.EnablePcap ("goal-topo-ap2-csma", vec_apCsmaDevices[1]);
-    csma.EnablePcap ("goal-topo-ap3-csma", vec_apCsmaDevices[2]);
-    csma.EnablePcap ("goal-topo-H1-csma", vec_terminalsDevices[0] );
-    csma.EnablePcap ("goal-topo-H2-csma", vec_terminalsDevices[1] );
-  }
+    {
+      AsciiTraceHelper ascii;
+      //csma.EnablePcapAll("goal-topo");
+      csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
+      /*    `YansWifiPhyHelper`的 Enablepcap()方法，第二个参数可接收NetDeviceContainer，也可以为Ptr<NetDevice>，还可以是  NodeContainer    */
+      wifiPhy.EnablePcap ("goal-topo-ap1-wifi", vec_bridgeDevices[0]); 
+      wifiPhy.EnablePcap ("goal-topo-ap2-wifi", vec_bridgeDevices[1]);
+      wifiPhy.EnablePcap ("goal-topo-ap3-wifi", vec_bridgeDevices[2]);
+      wifiPhy.EnablePcap ("goal-topo-ap1-sta3-wifi", vec_staDevices[0].Get(2));    // 这里因为是让ap1里面的sta3作为UdpClient( #9 节点)，所以要记录它的流量
+      // WifiMacHelper doesnot have `EnablePcap()` method
+      csma.EnablePcap ("goal-topo-switch1-csma", vec_switchesDevices[0]);           // switch1的csma网卡
+      csma.EnablePcap ("goal-topo-switch2-csma", vec_switchesDevices[1]);           // switch2的csma网卡
+      csma.EnablePcap ("goal-topo-ap1-csma", vec_apCsmaDevices[0]);
+      csma.EnablePcap ("goal-topo-ap2-csma", vec_apCsmaDevices[1]);
+      csma.EnablePcap ("goal-topo-ap3-csma", vec_apCsmaDevices[2]);
+      csma.EnablePcap ("goal-topo-H1-csma", vec_terminalsDevices[0] );
+      csma.EnablePcap ("goal-topo-H2-csma", vec_terminalsDevices[1] );
+    }
+
+// for animation
+  AnimationInterface anim ("goal-topo-for-dev.xml");
+  anim.SetConstantPosition(switchesNodes.Get(0),30,10);             // s1-----node 0
+  anim.SetConstantPosition(switchesNodes.Get(1),65,10);             // s2-----node 1
+  anim.SetConstantPosition(apBackboneNodes.Get(0),5,20);      // Ap1----node 2
+  anim.SetConstantPosition(apBackboneNodes.Get(1),30,20);      // Ap2----node 3
+  anim.SetConstantPosition(apBackboneNodes.Get(2),55,20);      // Ap3----node 4
+  anim.SetConstantPosition(terminalsNodes.Get(0),60,25);    // H1-----node 5
+  anim.SetConstantPosition(terminalsNodes.Get(1),65,25);    // H2-----node 6
+  anim.SetConstantPosition(vec_staNodes[2].Get(0),55,30);  //   -----node 14, 第三个wifi网络的第一个节点
+
+  anim.EnablePacketMetadata();   // to see the details of each packet
 
 
 
