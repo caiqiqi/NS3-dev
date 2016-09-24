@@ -59,8 +59,9 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool verbose = false;
 bool use_drop = false;
 bool tracing  = true;
-uint32_t maxBytes = 2 * 1024 * 1024;   // udp传输的最大字节数
+uint32_t maxBytes = 1 * 1024 * 1024;   // udp传输的最大字节数
 ns3::Time timeout = ns3::Seconds (0);
+ns3::Time stopTime = ns3::Seconds (10.0);  // simulation停止的时间
 
 bool
 SetVerbose (std::string value)
@@ -96,8 +97,6 @@ main (int argc, char *argv[])
   uint32_t nAp1Station = 3;
   uint32_t nAp2Station = 4;
   uint32_t nAp3Station = 1;
-
-  ns3::Time stopTime = ns3::Seconds (5.0);
 
   #ifdef NS3_OPENFLOW
 
@@ -424,10 +423,12 @@ main (int argc, char *argv[])
   BulkSendHelper source ("ns3::TcpSocketFactory",
                          InetSocketAddress (staWifiInterfaceC.GetAddress (0), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
-  source.SetAttribute ("MaxBytes", UintegerValue (maxBytes));
+  source.SetAttribute ("MaxBytes", UintegerValue (maxBytes) );
+  source.SetAttribute ("Interval", TimeValue (Time ("0.5")) );
+  source.SetAttribute ("PacketSize", UintegerValue (1024) )  ;
   ApplicationContainer sourceApps = source.Install (wifiAp1StaNodes.Get (2));  // #14号节点作为client
   sourceApps.Start (Seconds (0.0));
-  sourceApps.Stop (Seconds (10.0));
+  sourceApps.Stop ( stopTime );
 
 //
 // Create a PacketSinkApplication and install it on node 1
@@ -438,7 +439,7 @@ main (int argc, char *argv[])
                          InetSocketAddress (Ipv4Address::GetAny (), port));  // 在0.0.0.0 监听
   ApplicationContainer sinkApps = sink.Install (terminalsNode.Get (1));   // 第 #2个终端节点作为server
   sinkApps.Start (Seconds (0.0));
-  sinkApps.Stop (Seconds (10.0));
+  sinkApps.Stop ( stopTime );
 
   NS_LOG_INFO ("-----Configuring Tracing.-----");
 
