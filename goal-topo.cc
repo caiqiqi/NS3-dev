@@ -343,8 +343,15 @@ main (int argc, char *argv[])
   h1h2Interface = csmaIpAddress.Assign (terminalsDevice); 
 
 
+  /* 10.0.0.0/28  掩码: 255.255.255.240 IP范围: 10.0.0.1 ~ 10.0.0.255 
+   * 
+   * 每个子网16个IP。
+   * AP1: 10.0.0.1  ~ 10.0.0.15
+   * AP2: 10.0.0.16 ~ 10.0.0.31
+   * AP3: 10.0.0.32 ~ 10.0.0.47
+   */
   Ipv4AddressHelper ap1IpAddress;
-  ap1IpAddress.SetBase ("10.0.0.0", "255.255.255.0", "10.0.0.10");
+  ap1IpAddress.SetBase ("10.0.0.0", "255.255.255.240", "10.0.0.1");
   NetDeviceContainer wifi1Device = wifiSta1Device;
   wifi1Device.Add(wifiAp1Device);
   Ipv4InterfaceContainer interfaceA ;
@@ -352,7 +359,7 @@ main (int argc, char *argv[])
   
 
   Ipv4AddressHelper ap2IpAddress;
-  ap2IpAddress.SetBase ("10.0.0.0", "255.255.255.0", "10.0.0.20");
+  ap2IpAddress.SetBase ("10.0.0.0", "255.255.255.240", "10.0.0.16");
   NetDeviceContainer wifi2Device = wifiSta2Device;
   wifi2Device.Add(wifiAp2Device);
   Ipv4InterfaceContainer interfaceB ;
@@ -360,7 +367,7 @@ main (int argc, char *argv[])
 
 
   Ipv4AddressHelper ap3IpAddress;
-  ap3IpAddress.SetBase ("10.0.0.0", "255.255.255.0", "10.0.0.30");
+  ap3IpAddress.SetBase ("10.0.0.0", "255.255.255.240", "10.0.0.32");
   //NetDeviceContainer wifi3Device = wifiSta3Device;
   //wifi3Device.Add(wifiAp3Device);
   //Ipv4InterfaceContainer interfaceC ;
