@@ -45,6 +45,7 @@
 #include "ns3/log.h"
 #include "ns3/bridge-helper.h"
 #include "ns3/olsr-helper.h"
+#include "ns3/packet-sink.h"  // for packet sink, BulkSendHelper
 
 
 #include "ns3/netanim-module.h"
@@ -58,6 +59,7 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool verbose = false;
 bool use_drop = false;
 bool tracing  = true;
+uint32_t maxBytes = 0;   // 
 ns3::Time timeout = ns3::Seconds (0);
 
 bool
@@ -342,7 +344,7 @@ main (int argc, char *argv[])
 
 
   Ipv4AddressHelper ap1IpAddress;
-  ap1IpAddress.SetBase ("10.0.1.0", "255.255.255.0");
+  ap1IpAddress.SetBase ("10.0.0.0", "255.255.255.0", "10.0.0.10");
   NetDeviceContainer wifi1Device = wifiSta1Device;
   wifi1Device.Add(wifiAp1Device);
   Ipv4InterfaceContainer interfaceA ;
@@ -350,7 +352,7 @@ main (int argc, char *argv[])
   
 
   Ipv4AddressHelper ap2IpAddress;
-  ap2IpAddress.SetBase ("10.0.2.0", "255.255.255.0");
+  ap2IpAddress.SetBase ("10.0.0.0", "255.255.255.0", "10.0.0.20");
   NetDeviceContainer wifi2Device = wifiSta2Device;
   wifi2Device.Add(wifiAp2Device);
   Ipv4InterfaceContainer interfaceB ;
@@ -358,7 +360,7 @@ main (int argc, char *argv[])
 
 
   Ipv4AddressHelper ap3IpAddress;
-  ap3IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
+  ap3IpAddress.SetBase ("10.0.0.0", "255.255.255.0", "10.0.0.30");
   //NetDeviceContainer wifi3Device = wifiSta3Device;
   //wifi3Device.Add(wifiAp3Device);
   //Ipv4InterfaceContainer interfaceC ;
@@ -407,32 +409,29 @@ main (int argc, char *argv[])
   staticRoutingAp3Sta->SetDefaultRoute(apWifiInterfaceC.GetAddress(0), 1);
   
 
-  // Add applications
+
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
-  /*
-    `OnOffHelper` is for TCP
-    `UdpServerHelper` is for UDP
-  */
-  UdpServerHelper udpServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer server_apps = udpServer.Install (terminalsNode.Get(1));
-  server_apps.Start (Seconds(1.0));  
-  server_apps.Stop (stopTime);  
-  
 
-  UdpClientHelper udpClient (h1h2Interface.GetAddress(1) ,port);
-  udpClient.SetAttribute ("MaxPackets", UintegerValue (4));    // options:1,2,4,5
-  // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
-  udpClient.SetAttribute ("Interval", TimeValue (Seconds (0.5)));  
-  udpClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = udpClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
-  clientApps.Start (Seconds(2.0));  
-  clientApps.Stop (stopTime);
-  
-  // GlobalRouting does NOT work with Wi-Fi.
-  // https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
-  //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  Simulator::Stop (stopTime);
+  /*  这是client  */
+  BulkSendHelper source ("ns3::TcpSocketFactory",
+                         InetSocketAddress (i.GetAddress (1), port));
+  // Set the amount of data to send in bytes.  Zero is unlimited.
+  source.SetAttribute ("MaxBytes", UintegerValue (maxBytes));
+  ApplicationContainer sourceApps = source.Install (wifiAp1StaNodes.Get (2));  // #9号节点作为client
+  sourceApps.Start (Seconds (0.0));
+  sourceApps.Stop (Seconds (10.0));
+
+//
+// Create a PacketSinkApplication and install it on node 1
+//
+  /*  这是server  */ 
+  //TODO
+  PacketSinkHelper sink ("ns3::TcpSocketFactory",
+                         InetSocketAddress (Ipv4Address::GetAny (), port));  // 在0.0.0.0 监听
+  ApplicationContainer sinkApps = sink.Install (terminalsNode.Get (1));   // 第 #2个终端节点作为server
+  sinkApps.Start (Seconds (0.0));
+  sinkApps.Stop (Seconds (10.0));
 
   NS_LOG_INFO ("-----Configuring Tracing.-----");
 
