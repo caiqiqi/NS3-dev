@@ -411,21 +411,21 @@ main (int argc, char *argv[])
   if (tracing)
     {
       AsciiTraceHelper ascii;
-      //csma.EnablePcapAll("goal-topo");
-      csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
+      //csma.EnablePcapAll("goal-topo-for-dev");
+      csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo-for-dev.tr"));
       /*    `YansWifiPhyHelper`的 Enablepcap()方法，第二个参数可接收NetDeviceContainer，也可以为Ptr<NetDevice>，还可以是  NodeContainer    */
-      wifiPhy.EnablePcap ("goal-topo-ap1-wifi", vec_bridgeDevices[0]); 
-      wifiPhy.EnablePcap ("goal-topo-ap2-wifi", vec_bridgeDevices[1]);
-      wifiPhy.EnablePcap ("goal-topo-ap3-wifi", vec_bridgeDevices[2]);
-      wifiPhy.EnablePcap ("goal-topo-ap1-sta3-wifi", vec_staDevices[0].Get(2));    // 这里因为是让ap1里面的sta3作为UdpClient( #9 节点)，所以要记录它的流量
+      wifiPhy.EnablePcap ("goal-topo-for-dev-ap1-wifi", vec_bridgeDevices[0]); 
+      wifiPhy.EnablePcap ("goal-topo-for-dev-ap2-wifi", vec_bridgeDevices[1]);
+      wifiPhy.EnablePcap ("goal-topo-for-dev-ap3-wifi", vec_bridgeDevices[2]);
+      wifiPhy.EnablePcap ("goal-topo-for-dev-ap1-sta3-wifi", vec_staDevices[0].Get(2));    // 这里因为是让ap1里面的sta3作为UdpClient( #9 节点)，所以要记录它的流量
       // WifiMacHelper doesnot have `EnablePcap()` method
-      csma.EnablePcap ("goal-topo-switch1-csma", vec_switchesDevices[0]);           // switch1的csma网卡
-      csma.EnablePcap ("goal-topo-switch2-csma", vec_switchesDevices[1]);           // switch2的csma网卡
-      csma.EnablePcap ("goal-topo-ap1-csma", vec_apCsmaDevices[0]);
-      csma.EnablePcap ("goal-topo-ap2-csma", vec_apCsmaDevices[1]);
-      csma.EnablePcap ("goal-topo-ap3-csma", vec_apCsmaDevices[2]);
-      csma.EnablePcap ("goal-topo-H1-csma", vec_terminalsDevices[0] );
-      csma.EnablePcap ("goal-topo-H2-csma", vec_terminalsDevices[1] );
+      csma.EnablePcap ("goal-topo-for-dev-switch1-csma", vec_switchesDevices[0]);           // switch1的csma网卡
+      csma.EnablePcap ("goal-topo-for-dev-switch2-csma", vec_switchesDevices[1]);           // switch2的csma网卡
+      csma.EnablePcap ("goal-topo-for-dev-ap1-csma", vec_apCsmaDevices[0]);
+      csma.EnablePcap ("goal-topo-for-dev-ap2-csma", vec_apCsmaDevices[1]);
+      csma.EnablePcap ("goal-topo-for-dev-ap3-csma", vec_apCsmaDevices[2]);
+      csma.EnablePcap ("goal-topo-for-dev-H1-csma", vec_terminalsDevices[0] );
+      csma.EnablePcap ("goal-topo-for-dev-H2-csma", vec_terminalsDevices[1] );
     }
 
 // for animation
