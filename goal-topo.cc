@@ -61,7 +61,7 @@ bool use_drop = false;
 bool tracing  = true;
 uint32_t maxBytes = 1 * 1024 * 1024;   // udp传输的最大字节数
 ns3::Time timeout = ns3::Seconds (0);
-ns3::Time stopTime = ns3::Seconds (10.0);  // simulation停止的时间
+ns3::Time stopTime = ns3::Seconds (5.0);  // simulation停止的时间
 
 bool
 SetVerbose (std::string value)
