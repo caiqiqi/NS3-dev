@@ -85,7 +85,7 @@ main (int argc, char *argv[])
   ns3::Time stopTime = ns3::Seconds (10.0);
 
   //这里初始化Ssid动态数组的值，方便后面好迭代。
-  std::vector<Ssid> ssid ;
+  std::vector<Ssid> ssid(3) ;   // 这里不指定大小就报错 
   //error: in C++98 ‘ssid’ must be initialized by constructor, not by ‘{...}’
   // = { Ssid ("Ssid-AP1"), Ssid ("Ssid-AP2"), Ssid ("Ssid-AP3") } ; 
   ssid[0] = Ssid("Ssid-AP1") ;
@@ -257,7 +257,7 @@ main (int argc, char *argv[])
 ///////////-------2个终端与switch2////////////////////////////
 //////////--------2个controller分别与2个switch////////////////
 ////////////////////////////////////////////////////////////
-  NS_LOG_INFO ("-----Building Topology------");
+  NS_LOG_INFO ("----------------------Building Topology----------------------");
   
   NetDeviceContainer link;
 
@@ -378,10 +378,10 @@ main (int argc, char *argv[])
   
   ///////////// Create one udpServer application on node one.////////////////
   uint16_t port = 8000;
-  UdpServerHelper udpServer (port);
+  UdpEchoServerHelper udpEchoServer (port);
 
   ApplicationContainer server_apps;
-  server_apps = udpServer.Install (terminalsNodes.Get(1));   // node #6 (192.168.0.x) (第二个固定终端节点) 作为 UdpServer
+  server_apps = udpEchoServer.Install (terminalsNodes.Get(1));   // node #6 (192.168.0.x) (第二个固定终端节点) 作为 UdpServer
 
   server_apps.Start (Seconds (1.0));
   server_apps.Stop (Seconds (10.0));
@@ -390,14 +390,14 @@ main (int argc, char *argv[])
   /////////////// Create one UdpClient application to send UDP datagrams///////
 
   // 这个interfaces的第2个元素，然后得到它的第一个ip地址(其实只有一个ip) 
-  UdpClientHelper client (vec_csma_terminalInterfaces[1].GetAddress(0), port);        // dest: IP,port
+  UdpEchoClientHelper udpEchoclient (vec_csma_terminalInterfaces[1].GetAddress(0), port);        // dest: IP,port
 
-  client.SetAttribute ("MaxPackets", UintegerValue (320));       // 最大数据包数
-  client.SetAttribute ("Interval", TimeValue (Time ("0.5")));   // 时间间隔 0.01太小了吧，包不会太多了吗
-  client.SetAttribute ("PacketSize", UintegerValue (1024));      // 包大小
+  udpEchoclient.SetAttribute ("MaxPackets", UintegerValue (320));       // 最大数据包数
+  udpEchoclient.SetAttribute ("Interval", TimeValue (Time ("0.5")));   // 时间间隔 0.01太小了吧，包不会太多了吗
+  udpEchoclient.SetAttribute ("PacketSize", UintegerValue (1024));      // 包大小
 
   ApplicationContainer client_apps;
-  client_apps = client.Install (vec_staNodes[0].Get (2));    // node #9 (10.0.0.x)  也就是AP1下的9号节点
+  client_apps = udpEchoclient.Install (vec_staNodes[0].Get (2));    // node #9 (10.0.0.x)  也就是AP1下的9号节点
 
   client_apps.Start (Seconds (2.0));
   client_apps.Stop (Seconds (10.0));
@@ -406,7 +406,7 @@ main (int argc, char *argv[])
   Simulator::Stop (stopTime);
 
 
-  NS_LOG_INFO ("---------------------Configuring Tracing.-----------------------");
+  NS_LOG_INFO ("----------------------Configuring Tracing.----------------------");
   
   if (tracing)
     {
