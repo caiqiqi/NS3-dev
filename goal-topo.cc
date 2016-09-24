@@ -59,8 +59,10 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool verbose = false;
 bool use_drop = false;
 bool tracing  = true;
-uint32_t maxBytes = 1 * 1024 * 1024;   // udp传输的最大字节数
+uint32_t maxBytes = 1 * 1024;// * 1024;   // udp传输的最大字节数
 ns3::Time timeout = ns3::Seconds (0);
+
+ns3::Time startTime = ns3::Seconds (2.0);  // simulation开始的时间
 ns3::Time stopTime = ns3::Seconds (5.0);  // simulation停止的时间
 
 bool
@@ -419,27 +421,25 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
 
-  /*  这是client  */
+  /********  这是server  ********/ 
+  PacketSinkHelper sink ("ns3::TcpSocketFactory",
+                         InetSocketAddress (Ipv4Address::GetAny (), port));  // 在0.0.0.0 监听
+  ApplicationContainer sinkApps = sink.Install (terminalsNode.Get (1));   // #6号节点，即第2个终端节点作为server
+  sinkApps.Start (Seconds (0.0));
+  sinkApps.Stop ( stopTime );
+
+  /********  这是client  *********/
   BulkSendHelper source ("ns3::TcpSocketFactory",
                          InetSocketAddress (staWifiInterfaceC.GetAddress (0), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
   source.SetAttribute ("MaxBytes", UintegerValue (maxBytes) );
-  source.SetAttribute ("Interval", TimeValue (Time ("0.5")) );
-  source.SetAttribute ("PacketSize", UintegerValue (1024) )  ;
+  // the SetAttribute below is not allowed in `BulkSendApplication`
+  // source.SetAttribute ("Interval", TimeValue (Time ("0.5")) );
+  // source.SetAttribute ("PacketSize", UintegerValue (1024) )  ;
   ApplicationContainer sourceApps = source.Install (wifiAp1StaNodes.Get (2));  // #14号节点作为client
-  sourceApps.Start (Seconds (0.0));
-  sourceApps.Stop ( stopTime );
+  sourceApps.Start ( startTime );
+  sourceApps.Stop  ( stopTime );
 
-//
-// Create a PacketSinkApplication and install it on node 1
-//
-  /*  这是server  */ 
-  //TODO
-  PacketSinkHelper sink ("ns3::TcpSocketFactory",
-                         InetSocketAddress (Ipv4Address::GetAny (), port));  // 在0.0.0.0 监听
-  ApplicationContainer sinkApps = sink.Install (terminalsNode.Get (1));   // 第 #2个终端节点作为server
-  sinkApps.Start (Seconds (0.0));
-  sinkApps.Stop ( stopTime );
 
   NS_LOG_INFO ("-----Configuring Tracing.-----");
 
