@@ -119,8 +119,8 @@ main (int argc, char *argv[])
 //////////////////////////////////////////
 
   WifiHelper            wifi;
-  NqosWifiMacHelper     wifiMac;
-  //WifiMacHelper         wifiMac;
+  //NqosWifiMacHelper     wifiMac;  // for ns-3.24
+  WifiMacHelper         wifiMac;    // for ns-3.25
   YansWifiPhyHelper     wifiPhy = YansWifiPhyHelper::Default();
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default ();
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
@@ -279,13 +279,13 @@ main (int argc, char *argv[])
   }
 
   //Connect terminal1 and terminal2 to ofSwitch2 
-  for (int i = 0; i < nTerminal; i++)
+  for (uint32_t i = 0; i < nTerminal; i++)
   {
     /* 给终端节点和switch2组成的NodeContainer安装csma，然后终端的csma卡加入这一网卡。
     * 将link.Get(0)给 第i+1个终端的csma网卡Container
     * 将link.Get(1)给 switch2的csma网卡Container
     */
-    link = csma.Install( NodeContainer(vec_terminalsDevices[i], switchesNodes.Get(1)) );   // switch2
+    link = csma.Install( NodeContainer(terminalsNodes.Get(i), switchesNodes.Get(1)) );   // switch2
     vec_terminalsDevices[i].Add( link.Get(0) );
     vec_switchesDevices[1].Add( link.Get(1) );
   }
@@ -300,10 +300,10 @@ main (int argc, char *argv[])
   OpenFlowSwitchHelper switchHelper;
 
   Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
-  switchHelper.Install (switchNode1, switch1Device, controller);
+  switchHelper.Install (switchesNodes.Get(0), vec_switchesDevices.Get(0), controller);
   //switchHelper.Install (switchNode2, switch2Device, controller);
   Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
-  switchHelper.Install (switchNode2, switch2Device, controller2);
+  switchHelper.Install (switchesNodes.Get(1), vec_switchesDevices.Get(1), controller2);
 
 
 
