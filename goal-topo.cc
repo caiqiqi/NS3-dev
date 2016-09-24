@@ -59,7 +59,7 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool verbose = false;
 bool use_drop = false;
 bool tracing  = true;
-uint32_t maxBytes = 0;   // 
+uint32_t maxBytes = 2 * 1024 * 1024;   // udp传输的最大字节数
 ns3::Time timeout = ns3::Seconds (0);
 
 bool
@@ -343,15 +343,15 @@ main (int argc, char *argv[])
   h1h2Interface = csmaIpAddress.Assign (terminalsDevice); 
 
 
-  /* 10.0.0.0/28  掩码: 255.255.255.240 IP范围: 10.0.0.1 ~ 10.0.0.255 
+  /* 10.0.0.0/28  掩码: 255.255.255.240 IP范围: 10.0.0.1 ~ 10.0.0.254
    * 
-   * 每个子网16个IP。
+   * #16个网段; 每个子网16个IP(第一个和最后一个15个IP)。
    * AP1: 10.0.0.1  ~ 10.0.0.15
    * AP2: 10.0.0.16 ~ 10.0.0.31
    * AP3: 10.0.0.32 ~ 10.0.0.47
    */
   Ipv4AddressHelper ap1IpAddress;
-  ap1IpAddress.SetBase ("10.0.0.0", "255.255.255.240", "10.0.0.1");
+  ap1IpAddress.SetBase ("10.0.0.0", "255.255.255.240");
   NetDeviceContainer wifi1Device = wifiSta1Device;
   wifi1Device.Add(wifiAp1Device);
   Ipv4InterfaceContainer interfaceA ;
@@ -359,7 +359,7 @@ main (int argc, char *argv[])
   
 
   Ipv4AddressHelper ap2IpAddress;
-  ap2IpAddress.SetBase ("10.0.0.0", "255.255.255.240", "10.0.0.16");
+  ap2IpAddress.SetBase ("10.0.0.16", "255.255.255.240");
   NetDeviceContainer wifi2Device = wifiSta2Device;
   wifi2Device.Add(wifiAp2Device);
   Ipv4InterfaceContainer interfaceB ;
@@ -367,7 +367,7 @@ main (int argc, char *argv[])
 
 
   Ipv4AddressHelper ap3IpAddress;
-  ap3IpAddress.SetBase ("10.0.0.0", "255.255.255.240", "10.0.0.32");
+  ap3IpAddress.SetBase ("10.0.0.32", "255.255.255.240");
   //NetDeviceContainer wifi3Device = wifiSta3Device;
   //wifi3Device.Add(wifiAp3Device);
   //Ipv4InterfaceContainer interfaceC ;
