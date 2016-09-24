@@ -51,7 +51,7 @@
 
 using namespace ns3;
 
-// 用于命令行操作 `$ export NS_LOG=GoalTopoScript=info`
+// 用于命令行操作 `$ export NS_LOG=GoalTopoForDevelopmentScript=info`
 NS_LOG_COMPONENT_DEFINE ("GoalTopoForDevelopmentScript");
 
 
@@ -177,7 +177,7 @@ main (int argc, char *argv[])
 
   ////////////// 网卡设备  ///////////////////
   std::vector<NetDeviceContainer> vec_apCsmaDevices(3);       // AP的骨干网中的csma网卡设备,由于每个AP也都要连接好几个网卡设备，所以也为vector
-  NetDeviceContainer                  apWifiDevices;          // AP的wifi网中的wifi网卡设备
+  std::vector<NetDeviceContainer> vec_apWifiDevices(3);       // AP的wifi网中的wifi网卡设备
   std::vector<NetDeviceContainer> vec_bridgeDevices(3) ;      // 用于分配ip的桥接网卡设备  PS: 3为nAp的值
   std::vector<NetDeviceContainer> vec_staDevices(3);          // sta的wifi网卡设备，共 #3组
   std::vector<NetDeviceContainer> vec_terminalsDevices(2);    // terminal节点的csma网卡
@@ -300,10 +300,10 @@ main (int argc, char *argv[])
   OpenFlowSwitchHelper switchHelper;
 
   Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
-  switchHelper.Install (switchesNodes.Get(0), vec_switchesDevices.Get(0), controller);
+  switchHelper.Install (switchesNodes.Get(0), vec_switchesDevices[0], controller);
   //switchHelper.Install (switchNode2, switch2Device, controller);
   Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
-  switchHelper.Install (switchesNodes.Get(1), vec_switchesDevices.Get(1), controller2);
+  switchHelper.Install (switchesNodes.Get(1), vec_switchesDevices[1], controller2);
 
 
 
@@ -351,10 +351,10 @@ main (int argc, char *argv[])
   
   for (uint32_t i=0; i< nAp; ++i)
   {
-    wifiMac.SetType ("ns3::ApWifiMac", "Ssid", ssid[i] );
-    apWifiDevices.Get(i) = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get(i));
-    // 把骨干网上的索引为i的AP的csma网卡和这里的apWifiDevices.Get(i)的wifi网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
-    vec_bridgeDevices[i] = bridge.Install (apBackboneNodes.Get (i), NetDeviceContainer (apWifiDevices.Get(i), apCsmaDevices.Get (i) ) );
+    wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue(ssid[i]) );
+    vec_apWifiDevices[i] = wifi.Install (wifiPhy, wifiMac, apBackboneNodes.Get(i));
+    // 把骨干网上的索引为i的AP的csma网卡和这里的vec_apWifiDevices.Get(i)的wifi网卡加到骨干网的这个索引为i的节点上，即第i+1个AP上
+    vec_bridgeDevices[i] = bridge.Install (apBackboneNodes.Get (i), NetDeviceContainer (vec_apWifiDevices[i], vec_apCsmaDevices[i] ) );
     // 把给AP的ip给bridge, 而不是wifi
     vec_wifi_apInterfaces[i] = ip_wifi.Assign (vec_bridgeDevices[i]);
   }
@@ -364,7 +364,7 @@ main (int argc, char *argv[])
 
   for (uint32_t i = 0; i < nAp; ++i)
   {
-      wifiMac.SetType ("ns3::StaWifiMac", "Ssid", ssid[i], "ActiveProbing", BooleanValue (false) );
+      wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue(ssid[i]), "ActiveProbing", BooleanValue (false) );
       vec_staDevices[i] = wifi.Install (wifiPhy, wifiMac, vec_staNodes[i] );
       vec_wifi_staInterfaces[i] = ip_wifi.Assign (vec_staDevices[i] );
 
@@ -395,7 +395,7 @@ main (int argc, char *argv[])
   client.SetAttribute ("PacketSize", UintegerValue (1024));      // 包大小
 
   ApplicationContainer client_apps;
-  client_apps = client.Install (wifiAp1StaNodes.Get (2));    // node #9 (10.0.0.x)  也就是AP1下的9号节点
+  client_apps = client.Install (vec_staNodes[0].Get (2));    // node #9 (10.0.0.x)  也就是AP1下的9号节点
 
   client_apps.Start (Seconds (2.0));
   client_apps.Stop (Seconds (10.0));

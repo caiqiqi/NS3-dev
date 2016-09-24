@@ -138,8 +138,7 @@ main (int argc, char *argv[])
   WifiHelper wifi;
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
   //wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
-  NqosWifiMacHelper wifiMac ;
-  //WifiMacHelper wifiMac;
+  WifiMacHelper wifiMac;
 
  
   NS_LOG_INFO ("-----Creating nodes-----");
@@ -248,7 +247,6 @@ main (int argc, char *argv[])
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
   wifiAp3Device   = wifi.Install(wifiPhy, wifiMac, wifiAp3Node);    // csmaNodes
 
-  
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (0),
