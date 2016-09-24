@@ -415,10 +415,10 @@ main (int argc, char *argv[])
 
   /*  这是client  */
   BulkSendHelper source ("ns3::TcpSocketFactory",
-                         InetSocketAddress (i.GetAddress (1), port));
+                         InetSocketAddress (staWifiInterfaceC.GetAddress (0), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
   source.SetAttribute ("MaxBytes", UintegerValue (maxBytes));
-  ApplicationContainer sourceApps = source.Install (wifiAp1StaNodes.Get (2));  // #9号节点作为client
+  ApplicationContainer sourceApps = source.Install (wifiAp1StaNodes.Get (2));  // #14号节点作为client
   sourceApps.Start (Seconds (0.0));
   sourceApps.Stop (Seconds (10.0));
 
