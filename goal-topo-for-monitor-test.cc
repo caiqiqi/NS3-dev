@@ -55,7 +55,7 @@
 using namespace ns3;
 
 // 用于命令行操作 `$ export NS_LOG=GoalTopoScript=info`
-NS_LOG_COMPONENT_DEFINE ("GoalTopoForMonitorTest");
+NS_LOG_COMPONENT_DEFINE ("GoalTopoForMonitorTestScript");
 
 
 bool verbose   = false;
