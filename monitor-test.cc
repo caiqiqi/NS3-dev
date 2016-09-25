@@ -38,7 +38,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE("monitor-test");
+NS_LOG_COMPONENT_DEFINE("MonitorTestScript");
 
 const std::string MONITOR_TEST = "monitor-test" ;
 //用于测吞吐量
