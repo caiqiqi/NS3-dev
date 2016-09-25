@@ -42,7 +42,7 @@ NS_LOG_COMPONENT_DEFINE("MonitorTestScript");
 
 const std::string MONITOR_TEST = "monitor-test" ;
 //用于测吞吐量
-double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet);
+double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon );
 
 int
 main (int argc, char** argv)
@@ -136,14 +136,14 @@ main (int argc, char** argv)
 	{
 		flowMon = flowMonHelper.InstallAll();
 		// 调用吞吐量监控
-		throu = ThroughputMonitor(&flowMonHelper, flowMon, dataset);
+		throu = ThroughputMonitor(&flowMonHelper, flowMon);
 	}
 
  /*
  ***** Simulation计划在1秒开始，11秒结束。*****
  */
  /* `Simulator::Schedule` : Schedule a future event execution */
-    //Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon, dataset);
+    //Simulator::Schedule(Seconds(1), &ThroughputMonitor, flowMonHelper, flowMon);
     
     flowMon->SerializeToXmlFile( MONITOR_TEST + "flowMonitor_" + ".xml", true, true);
 
@@ -159,7 +159,7 @@ main (int argc, char** argv)
 
 }
 
-double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset DataSet) {
+double ThroughputMonitor(FlowMonitorHelper *fmhelper, Ptr<FlowMonitor> flowMon ) {
     
     double localThrou = 0;
     std::map<FlowId, FlowMonitor::FlowStats> flowStats = flowMon->GetFlowStats();
