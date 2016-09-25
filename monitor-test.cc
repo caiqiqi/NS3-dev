@@ -131,7 +131,7 @@ main (int argc, char** argv)
 	//如果enableFlowMonitor设置为true了，则开启监控模式
 	Ptr<FlowMonitor> flowMon;
 	FlowMonitorHelper flowMonHelper;
-	double throu;
+	// double throu;    // 在C++11里面，不能只定义一个变量，而不使用
 	if (enableFlowMonitor)
 	{
 		flowMon = flowMonHelper.InstallAll();
