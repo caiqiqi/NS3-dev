@@ -523,7 +523,7 @@ main (int argc, char *argv[])
     */
 
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-      if ((t.sourceAddress=="10.1.1.1" && t.destinationAddress == "10.1.2.2")) //TODO
+      if ((t.sourceAddress=="10.0.0.34" && t.destinationAddress == "192.168.0.8")) //TODO
       {
           std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";   // 传输了多少字节
@@ -543,7 +543,7 @@ main (int argc, char *argv[])
 
 
   Simulator::Destroy ();
-  
+
   NS_LOG_INFO ("-----Done.-----");
   #else
   NS_LOG_INFO ("-----NS-3 OpenFlow is not enabled. Cannot run simulation.-----");
