@@ -94,7 +94,7 @@ main (int argc, char *argv[])
   uint32_t nAp2Station = 4;
   uint32_t nAp3Station = 1;
 
-  ns3::Time stopTime = ns3::Seconds (5.0);
+  ns3::Time stopTime = ns3::Seconds (10.0);
 
   #ifdef NS3_OPENFLOW
 
@@ -416,7 +416,7 @@ main (int argc, char *argv[])
   
 
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (4));    // options:1,2,4,5
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (40));    // options:1,2,4,5
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
