@@ -418,7 +418,7 @@ main (int argc, char *argv[])
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
   echoClient.SetAttribute ("MaxPackets", UintegerValue (40));    // options:1,2,4,5
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (1.0)));  
+  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.2)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
   ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
