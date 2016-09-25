@@ -430,7 +430,6 @@ main (int argc, char *argv[])
   // GlobalRouting does NOT work with Wi-Fi.
   // https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
   //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
-  Simulator::Stop (stopTime);
 
   NS_LOG_INFO ("-----Configuring Tracing.-----");
 
@@ -486,9 +485,15 @@ main (int argc, char *argv[])
 
 /*
 ** Calculate Throughput using Flowmonitor
+** 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
 */
   FlowMonitorHelper flowmon;
   Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+
+  NS_LOG_INFO ("-----Running Simulation.-----");
+  Simulator::Stop (stopTime);
+  Simulator::Run ();
+
 
   monitor->CheckForLostPackets ();
 
@@ -521,8 +526,6 @@ main (int argc, char *argv[])
 
 
 
-  NS_LOG_INFO ("-----Running Simulation.-----");
-  Simulator::Run ();
   Simulator::Destroy ();
   NS_LOG_INFO ("-----Done.-----");
   #else
