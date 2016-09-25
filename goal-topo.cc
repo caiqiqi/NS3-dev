@@ -464,7 +464,7 @@ main (int argc, char *argv[])
   //
   //csma.EnablePcapAll ("goal-topo", false);
 
-  AnimationInterface anim ("xml/goal-topo.xml");
+  AnimationInterface anim ("trace/goal-topo.xml");
   anim.SetConstantPosition(switchNode1,30,10);             // s1-----node 0
   anim.SetConstantPosition(switchNode2,65,10);             // s2-----node 1
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
