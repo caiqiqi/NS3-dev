@@ -435,7 +435,7 @@ main (int argc, char *argv[])
 
 // Create one udpServer application on node one.
   uint16_t port1 = 8000;
-  UdpServerHelper server1 (port1);
+  UdpEchoServerHelper server1 (port1);
 
   ApplicationContainer server_apps;
   server_apps = server1.Install (terminalsNode.Get(1));   // node #6 (192.168.0.8) (第二个固定终端节点) 作为 UdpServer
@@ -447,7 +447,7 @@ main (int argc, char *argv[])
 // Create one UdpClient application to send UDP datagrams
 //
   
-  UdpClientHelper client1 (h1h2Interface.GetAddress(1), port1);        // dest: IP,port
+  UdpEchoClientHelper client1 (h1h2Interface.GetAddress(1), port1);        // dest: IP,port
 
   client1.SetAttribute ("MaxPackets", UintegerValue (320));       // 最大数据包数
   client1.SetAttribute ("Interval", TimeValue (Time ("0.01")));   // 时间间隔
@@ -460,7 +460,7 @@ main (int argc, char *argv[])
   client_apps.Stop (Seconds (10.0));
 
 
-
+  Simulator::Stop (Seconds(11.0));
 
 
   NS_LOG_INFO ("-----Configuring Tracing.-----");
@@ -528,8 +528,7 @@ main (int argc, char *argv[])
 ** Now, do the actual simulation.
 */
   NS_LOG_INFO ("Run Simulation.");
-  Simulator::Stop (Seconds(11.0));
-  Simulator::Run ();
+
 
   
 
@@ -557,6 +556,8 @@ main (int argc, char *argv[])
   // the SerializeToXmlFile () function 2nd and 3rd parameters 
   // are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
 
+  
+  Simulator::Run ();
   Simulator::Destroy ();
 
 
