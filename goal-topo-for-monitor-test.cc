@@ -552,7 +552,7 @@ main (int argc, char *argv[])
      }
 
 
-  monitor->SerializeToXmlFile("lab-1.flowmon", true, true);
+  monitor->SerializeToXmlFile("goal-topo-for-monitor-test.flowmon", true, true);
   // the SerializeToXmlFile () function 2nd and 3rd parameters 
   // are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
 
