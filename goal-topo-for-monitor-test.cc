@@ -46,6 +46,9 @@
 #include "ns3/bridge-helper.h"
 #include "ns3/olsr-helper.h"
 
+#include "ns3/flow-monitor-helper.h"
+#include "ns3/flow-monitor-module.h"
+
 
 #include "ns3/netanim-module.h"
 
