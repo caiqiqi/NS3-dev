@@ -52,7 +52,7 @@ main (int argc, char** argv)
 	Config::SetDefault ("ns3::OnOffApplication::DataRate", StringValue ("448kb/s"));
 
 	CommandLine cmd;
-	bool enableFlowMonitor = false;
+	bool enableFlowMonitor = true;
 	cmd.AddValue("EnableFlowMonitor", "Enable Flow Monitor", enableFlowMonitor);
 	cmd.Parse(argc, argv);
 
