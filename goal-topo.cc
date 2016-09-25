@@ -439,19 +439,19 @@ main (int argc, char *argv[])
     {
       AsciiTraceHelper ascii;
       //csma.EnablePcapAll("goal-topo");
-      csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo.tr"));
-      wifiPhy.EnablePcap ("goal-topo-ap1-wifi", wifiAp1Device);
-      wifiPhy.EnablePcap ("goal-topo-ap2-wifi", wifiAp2Device);
-      wifiPhy.EnablePcap ("goal-topo-ap3-wifi", wifiAp3Device);
-      wifiPhy.EnablePcap ("goal-topo-ap3-sta1-wifi", wifiSta3Device);
+      csma.EnableAsciiAll (ascii.CreateFileStream ("trace/goal-topo.tr"));
+      wifiPhy.EnablePcap ("trace/goal-topo-ap1-wifi", wifiAp1Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap2-wifi", wifiAp2Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap3-wifi", wifiAp3Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap3-sta1-wifi", wifiSta3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method
-      csma.EnablePcap ("goal-topo-switch1-csma", switch1Device);
-      csma.EnablePcap ("goal-topo-switch1-csma", switch2Device);
-      csma.EnablePcap ("goal-topo-ap1-csma", csmaAp1Device);
-      csma.EnablePcap ("goal-topo-ap2-csma", csmaAp2Device);
-      csma.EnablePcap ("goal-topo-ap3-csma", csmaAp3Device);
-      csma.EnablePcap ("goal-topo-H1-csma", terminalsDevice.Get(0));
-      csma.EnablePcap ("goal-topo-H2-csma", terminalsDevice.Get(1));
+      csma.EnablePcap ("trace/goal-topo-switch1-csma", switch1Device);
+      csma.EnablePcap ("trace/goal-topo-switch1-csma", switch2Device);
+      csma.EnablePcap ("trace/goal-topo-ap1-csma", csmaAp1Device);
+      csma.EnablePcap ("trace/goal-topo-ap2-csma", csmaAp2Device);
+      csma.EnablePcap ("trace/goal-topo-ap3-csma", csmaAp3Device);
+      csma.EnablePcap ("trace/goal-topo-H1-csma", terminalsDevice.Get(0));
+      csma.EnablePcap ("trace/goal-topo-H2-csma", terminalsDevice.Get(1));
     }
 
   //
@@ -464,7 +464,7 @@ main (int argc, char *argv[])
   //
   //csma.EnablePcapAll ("goal-topo", false);
 
-  AnimationInterface anim ("goal-topo.xml");
+  AnimationInterface anim ("xml/goal-topo.xml");
   anim.SetConstantPosition(switchNode1,30,10);             // s1-----node 0
   anim.SetConstantPosition(switchNode2,65,10);             // s2-----node 1
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
