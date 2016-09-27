@@ -62,7 +62,7 @@ bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
 uint32_t nMaxPackets = 400;    // The maximum packets to be sent.
-ns3::Time nInterval  = ns3::Seconds (0.02);  // The interval between two packet sent.
+ns3::Time nInterval  = ns3::Seconds (0.01);  // The interval between two packet sent.
 
 
 bool
