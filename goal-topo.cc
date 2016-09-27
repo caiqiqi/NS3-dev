@@ -421,18 +421,18 @@ main (int argc, char *argv[])
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
-  UdpEchoServerHelper echoServer (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = echoServer.Install (terminalsNode.Get(1));
+  UdpServerHelper server (port);  // for the server side, only one param(port) is specified
+  ApplicationContainer serverApps = server.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (stopTime);  
   
 
-  UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
+  UdpClientHelper client (h1h2Interface.GetAddress(1) ,port);
+  client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
-  echoClient.SetAttribute ("Interval", TimeValue (nInterval));  
-  echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
-  ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
+  client.SetAttribute ("Interval", TimeValue (nInterval));  
+  client.SetAttribute ("PacketSize", UintegerValue (1024));  
+  ApplicationContainer clientApps = client.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (stopTime);
   
