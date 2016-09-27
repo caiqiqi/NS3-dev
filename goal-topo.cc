@@ -419,7 +419,7 @@ main (int argc, char *argv[])
   
 
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (40));    // options:1,2,4,5
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (400));    // options:1,2,4,5
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
   echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.1)));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
