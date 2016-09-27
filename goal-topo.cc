@@ -61,8 +61,13 @@ bool use_drop = false;
 bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
+
+// for udp-server-client application.
 uint32_t nMaxPackets = 4000;    // The maximum packets to be sent.
 ns3::Time nInterval  = ns3::Seconds (0.01);  // The interval between two packet sent.
+
+// for tcp-bulk-send application.    Zero is unlimited.
+uint32_t nMaxBytes = 0;
 
 
 bool
@@ -123,8 +128,14 @@ main (int argc, char *argv[])
   //cmd.AddValue ("t", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
   //cmd.AddValue ("timeout", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
 
-  cmd.AddValue ("MaxPackets", "The maximum packets to be sent", nMaxPackets);
-  cmd.AddValue ("Interval", "The interval between two packet sent", nInterval);
+  
+  // for udp-server-client application
+  //cmd.AddValue ("MaxPackets", "The total packets that are available to be scheduled by the UDP application.", nMaxPackets);
+  //cmd.AddValue ("Interval", "The interval between two packet sent", nInterval);
+
+  // tcp-bulk-send application. 
+  cmd.AddValue ("MaxBytes", "The amount of data to send in bytes", nMaxBytes);
+
 
   cmd.Parse (argc, argv);
 
@@ -421,6 +432,10 @@ main (int argc, char *argv[])
   // Add applications
   NS_LOG_INFO ("-----Creating Applications.-----");
   uint16_t port = 9;   // Discard port (RFC 863)
+  
+
+
+  /*
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
   ApplicationContainer serverApps = server.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
@@ -431,10 +446,31 @@ main (int argc, char *argv[])
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
   client.SetAttribute ("Interval", TimeValue (nInterval));  
-  client.SetAttribute ("PacketSize", UintegerValue (1024));  
+  client.SetAttribute ("PacketSize", UintegerValue (1024));
   ApplicationContainer clientApps = client.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (stopTime);
+  */
+
+
+
+  // server
+  PacketSinkHelper sink ("ns3::TcpSocketFactory",
+                         InetSocketAddress (Ipv4Address::GetAny (), port));
+  ApplicationContainer sinkApps = sink.Install (terminalsNode.Get(1));
+  sinkApps.Start (Seconds (1.0));
+  sinkApps.Stop (stopTime);
+
+
+  // client
+  BulkSendHelper source ("ns3::TcpSocketFactory",
+                         InetSocketAddress (h1h2Interface.GetAddress(1), port));
+  // Set the amount of data to send in bytes.  Zero is unlimited.
+  source.SetAttribute ("MaxBytes", UintegerValue (nMaxBytes));
+  ApplicationContainer sourceApps = source.Install (wifiAp3StaNodes.Get(0));
+  sourceApps.Start (Seconds (2.0));
+  sourceApps.Stop (Seconds (10.0));
+
   
   // GlobalRouting does NOT work with Wi-Fi.
   // https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
