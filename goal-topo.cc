@@ -56,6 +56,13 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
+bool verbose = false;
+bool use_drop = false;
+bool tracing  = true;
+ns3::Time timeout = ns3::Seconds (0);
+
+uint32_t nMaxPackets = 400;    // The maximum packets to be sent.
+ns3::Time nInterval  = ns3::Seconds (0.02);  // The interval between two packet sent.
 
 
 bool
@@ -87,11 +94,6 @@ int
 main (int argc, char *argv[])
 {
 
-  bool verbose = false;
-  bool use_drop = false;
-  bool tracing  = true;
-
-  ns3::Time timeout = ns3::Seconds (0);
   ns3::Time stopTime = ns3::Seconds (10.0);
 
   uint32_t nAp         = 3;
@@ -100,10 +102,6 @@ main (int argc, char *argv[])
   uint32_t nAp1Station = 3;
   uint32_t nAp2Station = 4;
   uint32_t nAp3Station = 1;
-
-  
-  uint32_t nMaxPackets = 400;    // The maximum packets to be sent.
-  ns3::Time nInterval  = ns3::Seconds (0.02);  // The interval between two packet sent.
 
 
 
