@@ -546,17 +546,18 @@ main (int argc, char *argv[])
   std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
-    /* `Ipv4FlowClassifier`
-    Classifies packets by looking at their IP and TCP/UDP headers. 
-    FiveTuple五元组是：(source-ip, destination-ip, protocol, source-port, destination-port)
+    /* 
+     * `Ipv4FlowClassifier`
+     * Classifies packets by looking at their IP and TCP/UDP headers. 
+     * FiveTuple五元组是：(source-ip, destination-ip, protocol, source-port, destination-port)
     */
 
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.8")) //TODO
+    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.8")) // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
       {
           std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";   // 传输了多少字节
-          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";   // 收到了多少字节
+          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";   // client传输了多少字节
+          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";   // server收到了多少字节
           // 得出吞吐量(Throughput是多少)
           std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024  << " Mbps\n";
       }
