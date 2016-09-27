@@ -57,10 +57,6 @@ using namespace ns3;
 NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
 
-bool verbose = false;
-bool use_drop = false;
-bool tracing  = true;
-ns3::Time timeout = ns3::Seconds (0);
 
 bool
 SetVerbose (std::string value)
@@ -90,6 +86,14 @@ SetTimeout (std::string value)
 int
 main (int argc, char *argv[])
 {
+
+  bool verbose = false;
+  bool use_drop = false;
+  bool tracing  = true;
+
+  ns3::Time timeout = ns3::Seconds (0);
+  ns3::Time stopTime = ns3::Seconds (10.0);
+
   uint32_t nAp         = 3;
   uint32_t nSwitch     = 2;
   uint32_t nTerminal   = 2;
@@ -97,7 +101,11 @@ main (int argc, char *argv[])
   uint32_t nAp2Station = 4;
   uint32_t nAp3Station = 1;
 
-  ns3::Time stopTime = ns3::Seconds (10.0);
+  
+  uint32_t nMaxPackets = 400;    // The maximum packets to be sent.
+  ns3::Time nInterval  = ns3::Seconds (0.02);  // The interval between two packet sent.
+
+
 
   #ifdef NS3_OPENFLOW
 
@@ -106,16 +114,19 @@ main (int argc, char *argv[])
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",UintegerValue (10));
 
   CommandLine cmd;
-  cmd.AddValue ("nAp1Station", "Number of wifi STA devices of AP1", nAp1Station);
-  cmd.AddValue ("nAp2Station", "Number of wifi STA devices of AP2", nAp2Station);
-  cmd.AddValue ("nAp3Station", "Number of wifi STA devices of AP3", nAp3Station);
+  //cmd.AddValue ("nAp1Station", "Number of wifi STA devices of AP1", nAp1Station);
+  //cmd.AddValue ("nAp2Station", "Number of wifi STA devices of AP2", nAp2Station);
+  //cmd.AddValue ("nAp3Station", "Number of wifi STA devices of AP3", nAp3Station);
 
-  cmd.AddValue ("v", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
-  cmd.AddValue ("verbose", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
-  cmd.AddValue ("d", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
-  cmd.AddValue ("drop", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
-  cmd.AddValue ("t", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
-  cmd.AddValue ("timeout", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
+  //cmd.AddValue ("v", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
+  //cmd.AddValue ("verbose", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
+  //cmd.AddValue ("d", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
+  //cmd.AddValue ("drop", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
+  //cmd.AddValue ("t", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
+  //cmd.AddValue ("timeout", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
+
+  cmd.AddValue ("MaxPackets", "The maximum packets to be sent", nMaxPackets);
+  cmd.AddValue ("Interval", "The interval between two packet sent", nInterval);
 
   cmd.Parse (argc, argv);
 
@@ -419,9 +430,9 @@ main (int argc, char *argv[])
   
 
   UdpEchoClientHelper echoClient (h1h2Interface.GetAddress(1) ,port);
-  echoClient.SetAttribute ("MaxPackets", UintegerValue (400));    // options:1,2,4,5
+  echoClient.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
-  echoClient.SetAttribute ("Interval", TimeValue (Seconds (0.1)));  
+  echoClient.SetAttribute ("Interval", TimeValue (nInterval));  
   echoClient.SetAttribute ("PacketSize", UintegerValue (1024));  
   ApplicationContainer clientApps = echoClient.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
