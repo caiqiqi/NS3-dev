@@ -158,6 +158,8 @@ main (int argc, char *argv[])
   wifiPhy.SetChannel (wifiChannel.Create());
   //wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
   WifiHelper wifi;
+  // The SetRemoteStationManager method tells the helper the type of `rate control algorithm` to use. 
+  // Here, it is asking the helper to use the AARF algorithm
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
   //wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
   WifiMacHelper wifiMac;
@@ -246,7 +248,7 @@ main (int argc, char *argv[])
   //------- Network AP1-------
   NetDeviceContainer wifiSta1Device, wifiAp1Device;
   Ssid ssid1 = Ssid ("ssid-AP1");
-  // We want to make sure that our stations don't perform active probing.
+  // We want to make sure that our stations don't perform active probing.(就是等AP发现STA，而STA不主动发现AP)
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
   wifiSta1Device = wifi.Install(wifiPhy, wifiMac, wifiAp1StaNodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
