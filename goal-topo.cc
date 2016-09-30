@@ -158,12 +158,14 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
      }
   
 
-  dataset->SetTitle ("dataTitle");
+  dataset->SetTitle ("Throughput VS Time");
   dataset->SetStyle (Gnuplot2dDataset::LINES);
   dataset->Add ((Simulator::Now ()).GetSeconds (), localThrou);
 
   //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
-  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, &fmhelper, flowMon, &dataset);
+  // 表示每隔nSamplingPeriod时间，即0.5秒
+  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, fmhelper, flowMon, dataset);
+  //这里的这个Simulator::Schedule() 与后面main()里面传的参数格式不一样。
 }
 
 
@@ -547,7 +549,8 @@ main (int argc, char *argv[])
 */
   FlowMonitorHelper flowmon;
   Ptr<FlowMonitor> monitor = flowmon.InstallAll();
-  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  //表示从第#1秒开始
+  Simulator::Schedule(Seconds(1),&CheckThroughput, &flowmon, monitor, &dataset);
 
   NS_LOG_INFO ("-----Running Simulation.-----");
   /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
