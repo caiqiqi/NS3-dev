@@ -64,7 +64,7 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
-ns3::Time stopTime = ns3::Seconds (20.0);  // when the simulation stops
+ns3::Time stopTime = ns3::Seconds (40.0);  // when the simulation stops
 
 uint32_t nAp         = 3;
 uint32_t nSwitch     = 2;
