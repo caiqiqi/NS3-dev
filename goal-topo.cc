@@ -64,7 +64,7 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
-ns3::Time stopTime = ns3::Seconds (10.0);  // when the simulation stops
+ns3::Time stopTime = ns3::Seconds (20.0);  // when the simulation stops
 
 uint32_t nAp         = 3;
 uint32_t nSwitch     = 2;
@@ -159,6 +159,9 @@ CheckThroughput (Ptr<Ipv4FlowClassifier> classifier, Ptr<FlowMonitor> monitor, G
   dataset.SetTitle ("dataTitle");
   dataset.SetStyle (Gnuplot2dDataset::LINES);
   dataset.Add ((Simulator::Now ()).GetSeconds (), localThrou);
+
+  //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
+  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, classifier, monitor, dataset);
 }
 
 
@@ -552,9 +555,7 @@ main (int argc, char *argv[])
   Simulator::Run ();
 
   // 测吞吐量
-  //CheckThroughput(classifier, monitor, dataset);
-  //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
-  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, classifier, monitor, dataset);
+  CheckThroughput(classifier, monitor, dataset);
 
 
   // monitor->SerializeToXmlFile("trace/goal-topo.flowmon", true, true);
