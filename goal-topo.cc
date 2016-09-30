@@ -551,7 +551,7 @@ main (int argc, char *argv[])
   /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
    * 是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
    */
-  Simulator::Stop (stopTime);
+  //Simulator::Stop (stopTime);
   Simulator::Run ();
 
   // 测吞吐量
