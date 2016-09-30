@@ -159,9 +159,6 @@ CheckThroughput (Ptr<Ipv4FlowClassifier> classifier, Ptr<FlowMonitor> monitor, G
   dataset.SetTitle ("dataTitle");
   dataset.SetStyle (Gnuplot2dDataset::LINES);
   dataset.Add ((Simulator::Now ()).GetSeconds (), localThrou);
-
-  //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
-  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, classifier, monitor, dataset);
 }
 
 
@@ -551,11 +548,13 @@ main (int argc, char *argv[])
   /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
    * 是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
    */
-  //Simulator::Stop (stopTime);
+  Simulator::Stop (stopTime);
   Simulator::Run ();
 
   // 测吞吐量
-  CheckThroughput(classifier, monitor, dataset);
+  //CheckThroughput(classifier, monitor, dataset);
+  //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
+  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, classifier, monitor, dataset);
 
 
   // monitor->SerializeToXmlFile("trace/goal-topo.flowmon", true, true);
