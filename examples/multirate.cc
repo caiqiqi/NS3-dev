@@ -440,7 +440,7 @@ Experiment::Run (const WifiHelper &wifi, const YansWifiPhyHelper &wifiPhy,
 
 
 //    NS_LOG_INFO ("Enabling global routing on all nodes");
-//    Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   if ( scenario == 1 && enableRouting)
     {
@@ -515,7 +515,7 @@ Experiment::Run (const WifiHelper &wifi, const YansWifiPhyHelper &wifiPhy,
 
   FlowMonitorHelper flowmonHelper;
 
-  if (enableFlowMon)
+  if (enableFlowMon)  // 默认false
     {
       flowmonHelper.InstallAll ();
     }
@@ -523,7 +523,7 @@ Experiment::Run (const WifiHelper &wifi, const YansWifiPhyHelper &wifiPhy,
   Simulator::Stop (Seconds (totalTime));
   Simulator::Run ();
 
-  if (enableFlowMon)
+  if (enableFlowMon)  // 默认false
     {
       flowmonHelper.SerializeToXmlFile ((GetOutputFileName () + ".flomon"), false, false);
     }

@@ -30,8 +30,6 @@
 //
 // reference: http://blog.csdn.net/u012174021/article/details/42320033
 
-#include <iostream>
-#include <fstream>
 
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
@@ -41,25 +39,44 @@
 #include "ns3/mobility-module.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
+//#include "ns3/flow-monitor-helper.h"
+#include "ns3/flow-monitor-module.h"
 #include "ns3/openflow-module.h"
 #include "ns3/log.h"
-#include "ns3/bridge-helper.h"
 #include "ns3/olsr-helper.h"
 
-#include "ns3/flow-monitor-helper.h"
-#include "ns3/flow-monitor-module.h"
-
+// 搞不明白 `gnuplot`和`Gnuplot2Ddatabase`要通过这两个头文件包含进来
+#include "ns3/stats-module.h"
+#include "ns3/random-variable-stream.h"
 
 #include "ns3/netanim-module.h"
+
+#include <iostream>
+#include <fstream>
+
+
 
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 
-bool verbose = false;
-bool use_drop = false;
+
 bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
+
+ns3::Time stopTime = ns3::Seconds (10.0);  // when the simulation stops
+
+uint32_t nAp         = 3;
+uint32_t nSwitch     = 2;
+uint32_t nTerminal   = 2;
+uint32_t nAp1Station = 3;
+uint32_t nAp2Station = 4;
+uint32_t nAp3Station = 1;
+
+
+//std::string str_outputFileName = "goal-topo.plt" ;
+std::ofstream outputFileName("goal-topo.plt");  //GenerateOutput()接收的是ofstream类型的 
+ns3::Time nSamplingPeriod = ns3::Seconds (0.5);   // 抽样间隔，根据总的Simulation时间做相应的调整
 
 
 // for udp-server-client application.
@@ -70,19 +87,6 @@ ns3::Time nInterval  = ns3::Seconds (0.01);  // The interval between two packet 
 uint32_t nMaxBytes = 0;
 
 
-bool
-SetVerbose (std::string value)
-{
-  verbose = true;
-  return true;
-}
-
-bool
-SetDrop (std::string value)
-{
-  use_drop = true;
-  return true;
-}
 
 bool
 SetTimeout (std::string value)
@@ -95,36 +99,17 @@ SetTimeout (std::string value)
   return false;
 }
 
-int
-main (int argc, char *argv[])
+
+bool
+CommandSetup (int argc, char **argv)
 {
-
-  ns3::Time stopTime = ns3::Seconds (10.0);
-
-  uint32_t nAp         = 3;
-  uint32_t nSwitch     = 2;
-  uint32_t nTerminal   = 2;
-  uint32_t nAp1Station = 3;
-  uint32_t nAp2Station = 4;
-  uint32_t nAp3Station = 1;
-
-
-
-  #ifdef NS3_OPENFLOW
-
-
-  Config::SetDefault ("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue (true));
-  Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",UintegerValue (10));
-
+  // for commandline input
   CommandLine cmd;
+  //cmd.AddValue ("packetSize", "packet size", packetSize);
   //cmd.AddValue ("nAp1Station", "Number of wifi STA devices of AP1", nAp1Station);
   //cmd.AddValue ("nAp2Station", "Number of wifi STA devices of AP2", nAp2Station);
   //cmd.AddValue ("nAp3Station", "Number of wifi STA devices of AP3", nAp3Station);
 
-  //cmd.AddValue ("v", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
-  //cmd.AddValue ("verbose", "Verbose (turns on logging).", MakeCallback (&SetVerbose));
-  //cmd.AddValue ("d", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
-  //cmd.AddValue ("drop", "Use Drop Controller (Learning if not specified).", MakeCallback (&SetDrop));
   //cmd.AddValue ("t", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
   //cmd.AddValue ("timeout", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
 
@@ -135,19 +120,66 @@ main (int argc, char *argv[])
 
   // tcp-bulk-send application. 
   cmd.AddValue ("MaxBytes", "The amount of data to send in bytes", nMaxBytes);
-
-
-  cmd.Parse (argc, argv);
-
-  if (verbose)
-    {
-      LogComponentEnable ("OpenFlowCsmaSwitch", LOG_LEVEL_INFO);
-      LogComponentEnable ("OpenFlowInterface", LOG_LEVEL_INFO);
-      LogComponentEnable ("OpenFlowSwitchNetDevice", LOG_LEVEL_INFO);
-      LogComponentEnable ("UdpEchoClientApplication", LOG_LEVEL_INFO);  
-      LogComponentEnable ("UdpEchoServerApplication", LOG_LEVEL_INFO); 
-    }
+  cmd.AddValue ("SamplingPeriod", "sampling period", nSamplingPeriod);
   
+  cmd.Parse (argc, argv);
+  return true;
+}
+
+
+
+void
+CheckThroughput (Ptr<Ipv4FlowClassifier> classifier, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset)
+{
+  
+  monitor->CheckForLostPackets ();
+
+  //Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  double localThrou = 0;
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
+    {
+    /* 
+     * `Ipv4FlowClassifier`
+     * Classifies packets by looking at their IP and TCP/UDP headers. 
+     * FiveTuple五元组是：(source-ip, destination-ip, protocol, source-port, destination-port)
+    */
+
+    // 每个flow是根据包的五元组(协议，源IP/端口，目的IP/端口)来区分的
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.8")) // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
+      {
+          std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+          localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
+          std::cout << "  Throughput: " <<  localThrou << " Mbps\n";
+      }
+     }
+  
+
+  dataset.SetTitle ("dataTitle");
+  dataset.SetStyle (Gnuplot2dDataset::LINES);
+  dataset.Add ((Simulator::Now ()).GetSeconds (), localThrou);
+
+  //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
+  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, classifier, monitor, dataset);
+}
+
+
+int
+main (int argc, char *argv[])
+{
+
+  #ifdef NS3_OPENFLOW
+  Config::SetDefault ("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue (true));
+  Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",UintegerValue (10));
+  
+  // 设置命令行参数
+  CommandSetup (argc, argv) ;
+  
+
+  //------- for gnuplot ------
+  Gnuplot gnuplot;
+  Gnuplot2dDataset dataset;
 
   //----- init Helpers -----
   CsmaHelper csma;
@@ -311,24 +343,14 @@ main (int argc, char *argv[])
   
   OpenFlowSwitchHelper switchHelper;
 
-  if (use_drop)
-    {
-      Ptr<ns3::ofi::DropController> controller = CreateObject<ns3::ofi::DropController> ();
-      switchHelper.Install (switchNode1, switch1Device, controller);
-      switchHelper.Install (switchNode2, switch2Device, controller);
-      //Ptr<ns3::ofi::DropController> controller2 = CreateObject<ns3::ofi::DropController> ();
-      //switchHelper.Install (switchNode2, switch2Device, controller2);
-    }
-  else
-    {
-      Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
-      if (!timeout.IsZero ()) controller->SetAttribute ("ExpirationTime", TimeValue (timeout));
-      switchHelper.Install (switchNode1, switch1Device, controller);
-      //switchHelper.Install (switchNode2, switch2Device, controller);
-      Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
-      if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
-      switchHelper.Install (switchNode2, switch2Device, controller2);
-    }
+
+  Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
+  if (!timeout.IsZero ()) controller->SetAttribute ("ExpirationTime", TimeValue (timeout));
+  switchHelper.Install (switchNode1, switch1Device, controller);
+  //switchHelper.Install (switchNode2, switch2Device, controller);
+  Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
+  if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
+  switchHelper.Install (switchNode2, switch2Device, controller2);
 
 
   // We enable OLSR (which will be consulted at a higher priority than
@@ -393,24 +415,6 @@ main (int argc, char *argv[])
   staWifiInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
 
 
-  /*
-  // obtain a node pointer "node"
-  Ipv4NatHelper natHelper ;
-  Ptr<Ipv4Nat> nat = natHelper.Install (apsNode.Get (2));    //AP3
-  // the Ipv4Interface indices are used to refer to the NAT interfaces
-  nat->SetInside (1);
-  nat->SetOutside (2);
-  // NAT is configured to block all traffic that does not match one of the configured rules. 
-  // The user would configure rules next, such as follows:
-  // specify local and global IP addresses
-  Ipv4StaticNatRule rule (Ipv4Address ("10.0.3.2"), Ipv4Address ("192.168.0.102"));
-  nat->AddStaticRule (rule);
-
-  // the following code will help printing the NAT rules to a file nat.rules from the stream:
-
-  Ptr<OutputStreamWrapper> natStream = Create<OutputStreamWrapper> ("nat.rules", std::ios::out);
-  nat->PrintTable (natStream);
-  */
 
   // -----for StaticRouting(its very useful)-----
   
@@ -532,43 +536,32 @@ main (int argc, char *argv[])
 
 /*
 ** Calculate Throughput using Flowmonitor
-** 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
+** 每个探针(probe)会根据四点来对包进行分类
+** -- when packet is `sent`;
+** -- when packet is `forwarded`;
+** -- when packet is `received`;
+** -- when packet is `dropped`;
+** 由于包是在IP层进行track的，所以任何的四层(TCP)重传的包，都会被认为是一个新的包
 */
   FlowMonitorHelper flowmon;
   Ptr<FlowMonitor> monitor = flowmon.InstallAll();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
 
   NS_LOG_INFO ("-----Running Simulation.-----");
+  /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
+   * 是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
+   */
   Simulator::Stop (stopTime);
   Simulator::Run ();
 
-
-  monitor->CheckForLostPackets ();
-
-  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
-  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
-    {
-    /* 
-     * `Ipv4FlowClassifier`
-     * Classifies packets by looking at their IP and TCP/UDP headers. 
-     * FiveTuple五元组是：(source-ip, destination-ip, protocol, source-port, destination-port)
-    */
-
-    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.8")) // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
-      {
-          std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "  Tx Bytes:   " << i->second.txBytes << "\n";   // client传输了多少字节
-          std::cout << "  Rx Bytes:   " << i->second.rxBytes << "\n";   // server收到了多少字节
-          // 得出吞吐量(Throughput是多少)
-          std::cout << "  Throughput: " << i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024  << " Mbps\n";
-      }
-     }
+  // 测吞吐量
+  CheckThroughput(classifier, monitor, dataset);
 
 
-  monitor->SerializeToXmlFile("trace/goal-topo.flowmon", true, true);
-  // the SerializeToXmlFile () function 2nd and 3rd parameters 
-  // are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
+  // monitor->SerializeToXmlFile("trace/goal-topo.flowmon", true, true);
+  /* the SerializeToXmlFile () function 2nd and 3rd parameters 
+   * are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
+   */
 
 
 
@@ -576,6 +569,9 @@ main (int argc, char *argv[])
 
   Simulator::Destroy ();
   NS_LOG_INFO ("-----Done.-----");
+  gnuplot.AddDataset (dataset);
+  gnuplot.GenerateOutput (outputFileName);
+  NS_LOG_INFO ("-----Added dataset to outputfile-----");
   #else
   NS_LOG_INFO ("-----NS-3 OpenFlow is not enabled. Cannot run simulation.-----");
   #endif // NS3_OPENFLOW
