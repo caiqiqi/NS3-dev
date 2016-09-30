@@ -129,13 +129,15 @@ CommandSetup (int argc, char **argv)
 
 
 void
-CheckThroughput (Ptr<Ipv4FlowClassifier> classifier, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset)
+CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset* dataset)
 {
   
-  monitor->CheckForLostPackets ();
-
-  //Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (flowmon.GetClassifier ());
-  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  flowMon->CheckForLostPackets ();
+  std::map<FlowId, FlowMonitor::FlowStats> stats = flowMon->GetFlowStats ();
+  /* since fmhelper is a pointer, we should use it as a pointer.
+   * `fmhelper->GetClassifier ()` instead of `fmhelper.GetClassifier ()`
+   */
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
   double localThrou = 0;
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
@@ -156,12 +158,12 @@ CheckThroughput (Ptr<Ipv4FlowClassifier> classifier, Ptr<FlowMonitor> monitor, G
      }
   
 
-  dataset.SetTitle ("dataTitle");
-  dataset.SetStyle (Gnuplot2dDataset::LINES);
-  dataset.Add ((Simulator::Now ()).GetSeconds (), localThrou);
+  dataset->SetTitle ("dataTitle");
+  dataset->SetStyle (Gnuplot2dDataset::LINES);
+  dataset->Add ((Simulator::Now ()).GetSeconds (), localThrou);
 
   //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
-  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, classifier, monitor, dataset);
+  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, &fmhelper, flowMon, &dataset);
 }
 
 
@@ -555,7 +557,7 @@ main (int argc, char *argv[])
   Simulator::Run ();
 
   // 测吞吐量
-  CheckThroughput(classifier, monitor, dataset);
+  CheckThroughput(&flowmon, monitor, &dataset);
 
 
   // monitor->SerializeToXmlFile("trace/goal-topo.flowmon", true, true);
