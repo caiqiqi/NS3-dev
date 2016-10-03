@@ -117,12 +117,13 @@ CommandSetup (int argc, char **argv)
 
   
   // for udp-server-client application
-  //cmd.AddValue ("MaxPackets", "The total packets that are available to be scheduled by the UDP application.", nMaxPackets);
-  //cmd.AddValue ("Interval", "The interval between two packet sent", nInterval);
+  cmd.AddValue ("MaxPackets", "The total packets that are available to be scheduled by the UDP application.", nMaxPackets);
+  cmd.AddValue ("Interval", "The interval between two packet sent", nInterval);
 
   // tcp-bulk-send application. 
-  cmd.AddValue ("MaxBytes", "The amount of data to send in bytes", nMaxBytes);
-  cmd.AddValue ("SamplingPeriod", "sampling period", nSamplingPeriod);
+  //cmd.AddValue ("MaxBytes", "The amount of data to send in bytes", nMaxBytes);
+  cmd.AddValue ("SamplingPeriod", "Sampling period", nSamplingPeriod);
+  cmd.AddValue ("stopTime", "The time to stop", stopTime)
   
   cmd.Parse (argc, argv);
   return true;
