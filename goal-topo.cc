@@ -65,7 +65,7 @@ bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
 /*这里20.0, 30.0, 40.0都是一样的*/
-ns3::Time stopTime = ns3::Seconds (20.0);  // when the simulation stops
+double stopTime = 20.0;  // when the simulation stops
 
 uint32_t nAp         = 3;
 uint32_t nSwitch     = 2;
@@ -77,13 +77,13 @@ uint32_t nAp3Station = 1;
 
 //std::string str_outputFileName = "goal-topo.plt" ;
 std::ofstream outputFileName("goal-topo.plt");  //GenerateOutput()接收的是ofstream类型的 
-ns3::Time nSamplingPeriod = ns3::Seconds (0.5);   // 抽样间隔，根据总的Simulation时间做相应的调整
+double nSamplingPeriod = 0.5;   // 抽样间隔，根据总的Simulation时间做相应的调整
 
 
 /*这里不管是2000还是4000还是5000，吞吐量都是40878----*/
 // for udp-server-client application.
 uint32_t nMaxPackets = 2000;    // The maximum packets to be sent.
-ns3::Time nInterval  = ns3::Seconds (0.01);  // The interval between two packet sent.
+double nInterval  = 0.01;  // The interval between two packet sent.
 
 // for tcp-bulk-send application.    Zero is unlimited.
 uint32_t nMaxBytes = 0;
@@ -167,7 +167,8 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
 
   //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
   // 表示每隔nSamplingPeriod时间，即0.5秒
-  Simulator::Schedule (nSamplingPeriod, &CheckThroughput, fmhelper, flowMon, dataset);
+  Simulator::Schedule (TimeValue(Seconds(nSamplingPeriod)), 
+    &CheckThroughput, fmhelper, flowMon, dataset);
   //这里的这个Simulator::Schedule() 与后面main()里面传的参数格式不一样。
 }
 
@@ -456,18 +457,18 @@ main (int argc, char *argv[])
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
   ApplicationContainer serverApps = server.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
-  serverApps.Stop (stopTime);  
+  serverApps.Stop (TimeValue(Seconds(stopTime)));  
   
 
   // UDP client
   UdpClientHelper client (h1h2Interface.GetAddress(1) ,port);
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
-  client.SetAttribute ("Interval", TimeValue (nInterval));  
+  client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (1024));
   ApplicationContainer clientApps = client.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
-  clientApps.Stop (stopTime);
+  clientApps.Stop (TimeValue(Seconds(stopTime)));
   
 
 
@@ -478,7 +479,7 @@ main (int argc, char *argv[])
                          InetSocketAddress (Ipv4Address::GetAny (), port));
   ApplicationContainer sinkApps = sink.Install (terminalsNode.Get(1));
   sinkApps.Start (Seconds (1.0));
-  sinkApps.Stop (stopTime);
+  sinkApps.Stop (TimeValue(Seconds(stopTime)));
 
 
   // TCP client
@@ -566,7 +567,7 @@ main (int argc, char *argv[])
   /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
    * 是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
    */
-  Simulator::Stop (stopTime);
+  Simulator::Stop (TimeValue(Seconds(stopTime)));
   Simulator::Run ();
 
   // 测吞吐量
