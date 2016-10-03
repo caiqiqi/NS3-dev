@@ -167,7 +167,7 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
 
   //check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
   // 表示每隔nSamplingPeriod时间，即0.5秒
-  Simulator::Schedule (TimeValue(Seconds(nSamplingPeriod)), 
+  Simulator::Schedule (Seconds(nSamplingPeriod), 
     &CheckThroughput, fmhelper, flowMon, dataset);
   //这里的这个Simulator::Schedule() 与后面main()里面传的参数格式不一样。
 }
