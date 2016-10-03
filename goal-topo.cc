@@ -450,13 +450,15 @@ main (int argc, char *argv[])
   
 
 
-  /*
+  
+  // UDP server
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
   ApplicationContainer serverApps = server.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (stopTime);  
   
 
+  // UDP client
   UdpClientHelper client (h1h2Interface.GetAddress(1) ,port);
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
@@ -465,11 +467,12 @@ main (int argc, char *argv[])
   ApplicationContainer clientApps = client.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (stopTime);
-  */
+  
 
 
 
-  // server
+  /*
+  // TCP server
   PacketSinkHelper sink ("ns3::TcpSocketFactory",
                          InetSocketAddress (Ipv4Address::GetAny (), port));
   ApplicationContainer sinkApps = sink.Install (terminalsNode.Get(1));
@@ -477,7 +480,7 @@ main (int argc, char *argv[])
   sinkApps.Stop (stopTime);
 
 
-  // client
+  // TCP client
   BulkSendHelper source ("ns3::TcpSocketFactory",
                          InetSocketAddress (h1h2Interface.GetAddress(1), port));
   // Set the amount of data to send in bytes.  Zero is unlimited.
@@ -485,6 +488,7 @@ main (int argc, char *argv[])
   ApplicationContainer sourceApps = source.Install (wifiAp3StaNodes.Get(0));
   sourceApps.Start (Seconds (2.0));
   sourceApps.Stop (Seconds (10.0));
+  */
 
   
   // GlobalRouting does NOT work with Wi-Fi.
