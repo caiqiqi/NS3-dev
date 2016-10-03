@@ -64,7 +64,8 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
-ns3::Time stopTime = ns3::Seconds (40.0);  // when the simulation stops
+/*这里20.0, 30.0, 40.0都是一样的*/
+ns3::Time stopTime = ns3::Seconds (20.0);  // when the simulation stops
 
 uint32_t nAp         = 3;
 uint32_t nSwitch     = 2;
@@ -79,8 +80,9 @@ std::ofstream outputFileName("goal-topo.plt");  //GenerateOutput()接收的是of
 ns3::Time nSamplingPeriod = ns3::Seconds (0.5);   // 抽样间隔，根据总的Simulation时间做相应的调整
 
 
+/*这里不管是2000还是4000还是5000，吞吐量都是40878----*/
 // for udp-server-client application.
-uint32_t nMaxPackets = 4000;    // The maximum packets to be sent.
+uint32_t nMaxPackets = 2000;    // The maximum packets to be sent.
 ns3::Time nInterval  = ns3::Seconds (0.01);  // The interval between two packet sent.
 
 // for tcp-bulk-send application.    Zero is unlimited.
