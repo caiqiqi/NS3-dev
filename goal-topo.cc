@@ -353,10 +353,10 @@ main (int argc, char *argv[])
   Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
   if (!timeout.IsZero ()) controller->SetAttribute ("ExpirationTime", TimeValue (timeout));
   switchHelper.Install (switchNode1, switch1Device, controller);
-  //switchHelper.Install (switchNode2, switch2Device, controller);
-  Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
-  if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
-  switchHelper.Install (switchNode2, switch2Device, controller2);
+  switchHelper.Install (switchNode2, switch2Device, controller);
+  //Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
+  //if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
+  //switchHelper.Install (switchNode2, switch2Device, controller2);
 
 
   // We enable OLSR (which will be consulted at a higher priority than
