@@ -457,7 +457,7 @@ main (int argc, char *argv[])
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
   ApplicationContainer serverApps = server.Install (terminalsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
-  serverApps.Stop (TimeValue(Seconds(stopTime)));  
+  serverApps.Stop (Seconds(stopTime));  
   
 
   // UDP client
@@ -468,7 +468,7 @@ main (int argc, char *argv[])
   client.SetAttribute ("PacketSize", UintegerValue (1024));
   ApplicationContainer clientApps = client.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
-  clientApps.Stop (TimeValue(Seconds(stopTime)));
+  clientApps.Stop (Seconds(stopTime));
   
 
 
@@ -567,7 +567,7 @@ main (int argc, char *argv[])
   /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
    * 是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
    */
-  Simulator::Stop (TimeValue(Seconds(stopTime)));
+  Simulator::Stop (Seconds(stopTime));
   Simulator::Run ();
 
   // 测吞吐量
