@@ -123,7 +123,7 @@ CommandSetup (int argc, char **argv)
   // tcp-bulk-send application. 
   //cmd.AddValue ("MaxBytes", "The amount of data to send in bytes", nMaxBytes);
   cmd.AddValue ("SamplingPeriod", "Sampling period", nSamplingPeriod);
-  cmd.AddValue ("stopTime", "The time to stop", stopTime)
+  cmd.AddValue ("stopTime", "The time to stop", stopTime);
   
   cmd.Parse (argc, argv);
   return true;
