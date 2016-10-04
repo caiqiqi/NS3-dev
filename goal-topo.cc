@@ -64,12 +64,12 @@ NS_LOG_COMPONENT_DEFINE ("GoalTopoScript");
 bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
-/*这里20.0, 30.0, 40.0都是一样的*/
+
 double stopTime = 20.0;  // when the simulation stops
 
 uint32_t nAp         = 3;
 uint32_t nSwitch     = 2;
-uint32_t nTerminal   = 2;
+uint32_t nHost   = 2;
 uint32_t nAp1Station = 3;
 uint32_t nAp2Station = 4;
 uint32_t nAp3Station = 1;
@@ -107,20 +107,16 @@ CommandSetup (int argc, char **argv)
 {
   // for commandline input
   CommandLine cmd;
-  //cmd.AddValue ("packetSize", "packet size", packetSize);
-  //cmd.AddValue ("nAp1Station", "Number of wifi STA devices of AP1", nAp1Station);
-  //cmd.AddValue ("nAp2Station", "Number of wifi STA devices of AP2", nAp2Station);
-  //cmd.AddValue ("nAp3Station", "Number of wifi STA devices of AP3", nAp3Station);
-
   //cmd.AddValue ("t", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
   //cmd.AddValue ("timeout", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
 
   
   // for udp-server-client application
-  cmd.AddValue ("MaxPackets", "The total packets that are available to be scheduled by the UDP application.", nMaxPackets);
+  cmd.AddValue ("MaxPackets", "The total packets available to be scheduled by the UDP application.", nMaxPackets);
   cmd.AddValue ("Interval", "The interval between two packet sent", nInterval);
 
-  // tcp-bulk-send application. 
+  // for tcp-bulk-send application. 
+  
   //cmd.AddValue ("MaxBytes", "The amount of data to send in bytes", nMaxBytes);
   cmd.AddValue ("SamplingPeriod", "Sampling period", nSamplingPeriod);
   cmd.AddValue ("stopTime", "The time to stop", stopTime);
@@ -217,12 +213,12 @@ main (int argc, char *argv[])
   NodeContainer wifiAp2Node = apsNode.Get (1);
   NodeContainer wifiAp3Node = apsNode.Get (2);
 
-  NodeContainer terminalsNode;
-  terminalsNode.Create (nTerminal); //2 Nodes(terminal1 and terminal2)-----node 5,6
+  NodeContainer hostsNode;
+  hostsNode.Create (nHost); //2 Nodes(terminal1 and terminal2)-----node 5,6
   
   NodeContainer csmaNodes;
   csmaNodes.Add(apsNode);         // APs index : 0,1,2
-  csmaNodes.Add(terminalsNode);   // terminals index: 3,4 
+  csmaNodes.Add(hostsNode);   // terminals index: 3,4 
 
   
 
@@ -244,14 +240,17 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----Building Topology------");
 
   // Create the csma links, from each AP & terminals to the switch
-  NetDeviceContainer csmaAp1Device, csmaAp2Device, csmaAp3Device;
-  csmaAp1Device.Add (csmaDevices.Get(0));
-  csmaAp2Device.Add (csmaDevices.Get(1));
-  csmaAp3Device.Add (csmaDevices.Get(2));
+  NetDeviceContainer ap1CsmaDevice, ap2CsmaDevice, ap3CsmaDevice;
+  /*
+  这里跟下面的 `ap1CsmaDevice.Add(link.Get(0)); `重复了，会导致每个AP有两张CSMA网卡
+  ap1CsmaDevice.Add (csmaDevices.Get(0));
+  ap2CsmaDevice.Add (csmaDevices.Get(1));
+  ap3CsmaDevice.Add (csmaDevices.Get(2));
+  */
 
-  NetDeviceContainer terminalsDevice;
-  terminalsDevice.Add (csmaDevices.Get(3));
-  terminalsDevice.Add (csmaDevices.Get(4));
+  NetDeviceContainer hostsDevice;
+  hostsDevice.Add (csmaDevices.Get(3));
+  hostsDevice.Add (csmaDevices.Get(4));
   
   NetDeviceContainer switch1Device, switch2Device;
   NetDeviceContainer link;
@@ -265,13 +264,13 @@ main (int argc, char *argv[])
   link = csma.Install(NodeContainer(csmaNodes.Get(0),switchesNode.Get(0)));
   // link is a list, including the two nodes
   // add one to apDevice{A,B,C}, the other to switch1Device
-  csmaAp1Device.Add(link.Get(0));  
+  ap1CsmaDevice.Add(link.Get(0));  
   switch1Device.Add(link.Get(1));
   link = csma.Install(NodeContainer(csmaNodes.Get(1),switchesNode.Get(0)));
-  csmaAp2Device.Add(link.Get(0));  
+  ap2CsmaDevice.Add(link.Get(0));  
   switch1Device.Add(link.Get(1));
   link = csma.Install(NodeContainer(csmaNodes.Get(2),switchesNode.Get(0)));
-  csmaAp3Device.Add(link.Get(0));
+  ap3CsmaDevice.Add(link.Get(0));
   switch1Device.Add(link.Get(1));
 
 
@@ -279,37 +278,37 @@ main (int argc, char *argv[])
   for (int i = 3; i < 5; i++)
     {
       link = csma.Install(NodeContainer(csmaNodes.Get(i), switchesNode.Get(1)));
-      terminalsDevice.Add(link.Get(0));
+      hostsDevice.Add(link.Get(0));
       switch2Device.Add(link.Get(1));
 
     }
 
 
   //------- Network AP1-------
-  NetDeviceContainer wifiSta1Device, wifiAp1Device;
+  NetDeviceContainer staWifi1Device, apWifi1Device;
   Ssid ssid1 = Ssid ("ssid-AP1");
   // We want to make sure that our stations don't perform active probing.(就是等AP发现STA，而STA不主动发现AP)
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
-  wifiSta1Device = wifi.Install(wifiPhy, wifiMac, wifiAp1StaNodes );
+  staWifi1Device = wifi.Install(wifiPhy, wifiMac, wifiAp1StaNodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
-  wifiAp1Device   = wifi.Install(wifiPhy, wifiMac, wifiAp1Node);    // csmaNodes
+  apWifi1Device   = wifi.Install(wifiPhy, wifiMac, wifiAp1Node);    // csmaNodes
 
   //------- Network AP2-------
-  NetDeviceContainer wifiSta2Device, wifiAp2Device;
+  NetDeviceContainer staWifi2Device, apWifi2Device;
   Ssid ssid2 = Ssid ("ssid-AP2");
   // We want to make sure that our stations don't perform active probing.
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
-  wifiSta2Device = wifi.Install(wifiPhy, wifiMac, wifiAp2StaNodes );
+  staWifi2Device = wifi.Install(wifiPhy, wifiMac, wifiAp2StaNodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
-  wifiAp2Device   = wifi.Install(wifiPhy, wifiMac, wifiAp2Node);     // csmaNodes
+  apWifi2Device   = wifi.Install(wifiPhy, wifiMac, wifiAp2Node);     // csmaNodes
 
   //------- Network AP3-------
-  NetDeviceContainer wifiSta3Device, wifiAp3Device;
+  NetDeviceContainer staWifi3Device, apWifi3Device;
   Ssid ssid3 = Ssid ("ssid-AP3");
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
-  wifiSta3Device = wifi.Install(wifiPhy, wifiMac, wifiAp3StaNodes );
+  staWifi3Device = wifi.Install(wifiPhy, wifiMac, wifiAp3StaNodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
-  wifiAp3Device   = wifi.Install(wifiPhy, wifiMac, wifiAp3Node);    // csmaNodes
+  apWifi3Device   = wifi.Install(wifiPhy, wifiMac, wifiAp3Node);    // csmaNodes
 
   MobilityHelper mobility;
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
@@ -349,19 +348,18 @@ main (int argc, char *argv[])
   Ptr<Node> switchNode1 = switchesNode.Get (0);
   Ptr<Node> switchNode2 = switchesNode.Get (1);
   
+  /*------------------ OpenFlow Switch && Controller------------*/
   OpenFlowSwitchHelper switchHelper;
 
-
-  /*
   Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
   if (!timeout.IsZero ()) controller->SetAttribute ("ExpirationTime", TimeValue (timeout));
   switchHelper.Install (switchNode1, switch1Device, controller);
-  switchHelper.Install (switchNode2, switch2Device, controller);
+  //switchHelper.Install (switchNode2, switch2Device, controller);
 
-  //Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
-  //if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
-  //switchHelper.Install (switchNode2, switch2Device, controller2);
-  */
+  Ptr<ns3::ofi::LearningController> controller2 = CreateObject<ns3::ofi::LearningController> ();
+  if (!timeout.IsZero ()) controller2->SetAttribute ("ExpirationTime", TimeValue (timeout));
+  switchHelper.Install (switchNode2, switch2Device, controller2);
+  
 
 
   // We enable OLSR (which will be consulted at a higher priority than
@@ -388,62 +386,63 @@ main (int argc, char *argv[])
   Ipv4AddressHelper csmaIpAddress;
   csmaIpAddress.SetBase ("192.168.0.0", "255.255.255.0");
 
+  //TODO I wonder how the IP addresses in csma network are assigned twice. 
+
   // for Ap1,Ap2 and Ap3
-  csmaIpAddress.Assign (csmaAp1Device);    // csmaDevices
-  csmaIpAddress.Assign (csmaAp2Device); 
-  //csmaIpAddress.Assign (csmaAp3Device);
+  csmaIpAddress.Assign (ap1CsmaDevice);    // csmaDevices
+  csmaIpAddress.Assign (ap2CsmaDevice); 
+  //csmaIpAddress.Assign (ap3CsmaDevice);
   Ipv4InterfaceContainer csmaAp3Interface;
-  csmaAp3Interface = csmaIpAddress.Assign (csmaAp3Device);
+  csmaAp3Interface = csmaIpAddress.Assign (ap3CsmaDevice);
   Ipv4InterfaceContainer h1h2Interface;
-  h1h2Interface = csmaIpAddress.Assign (terminalsDevice); 
+  h1h2Interface = csmaIpAddress.Assign (hostsDevice); 
 
 
   Ipv4AddressHelper ap1IpAddress;
   ap1IpAddress.SetBase ("10.0.1.0", "255.255.255.0");
-  NetDeviceContainer wifi1Device = wifiSta1Device;
-  wifi1Device.Add(wifiAp1Device);
+  NetDeviceContainer wifi1Device = staWifi1Device;
+  wifi1Device.Add(apWifi1Device);
   Ipv4InterfaceContainer interfaceA ;
   interfaceA = ap1IpAddress.Assign (wifi1Device);
   
 
   Ipv4AddressHelper ap2IpAddress;
   ap2IpAddress.SetBase ("10.0.2.0", "255.255.255.0");
-  NetDeviceContainer wifi2Device = wifiSta2Device;
-  wifi2Device.Add(wifiAp2Device);
+  NetDeviceContainer wifi2Device = staWifi2Device;
+  wifi2Device.Add(apWifi2Device);
   Ipv4InterfaceContainer interfaceB ;
   interfaceB = ap2IpAddress.Assign (wifi2Device);
 
 
   Ipv4AddressHelper ap3IpAddress;
   ap3IpAddress.SetBase ("10.0.3.0", "255.255.255.0");
-  //NetDeviceContainer wifi3Device = wifiSta3Device;
-  //wifi3Device.Add(wifiAp3Device);
+  //NetDeviceContainer wifi3Device = staWifi3Device;
+  //wifi3Device.Add(apWifi3Device);
   //Ipv4InterfaceContainer interfaceC ;
   //interfaceC = ap3IpAddress.Assign (wifi3Device);
-  Ipv4InterfaceContainer apWifiInterfaceC ;
-  Ipv4InterfaceContainer staWifiInterfaceC ;
-  apWifiInterfaceC  = ap3IpAddress.Assign (wifiAp3Device);
-  staWifiInterfaceC = ap3IpAddress.Assign (wifiSta3Device);
+  Ipv4InterfaceContainer apWifi3Interface ;
+  Ipv4InterfaceContainer staWifi3Interface ;
+  apWifi3Interface  = ap3IpAddress.Assign (apWifi3Device);
+  staWifi3Interface = ap3IpAddress.Assign (staWifi3Device);
 
 
 
   // -----for StaticRouting(its very useful)-----
   
-  Ptr<Ipv4> ipv4Ap3 = apsNode.Get(2)->GetObject<Ipv4> ();
-  Ptr<Ipv4> ipv4H2 = terminalsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
-  Ptr<Ipv4> ipv4Ap3Sta = wifiAp3StaNodes.Get(0)->GetObject<Ipv4> ();    // node 14
+  Ptr<Ipv4> ap3Ipv4 = apsNode.Get(2)->GetObject<Ipv4> ();
+  Ptr<Ipv4> h2Ipv4 = hostsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
+  Ptr<Ipv4> staAp3Ipv4 = wifiAp3StaNodes.Get(0)->GetObject<Ipv4> ();    // node 14
 
-  //Ipv4StaticRoutingHelper ipv4RoutingHelper;   // moved this code ahead
   // the intermedia AP3
-  //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3);
+  //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (Ap3Ipv4);
   //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
-  //staticRoutingAp3->SetDefaultRoute(staWifiInterfaceC.GetAddress(0), 1);
+  //staticRoutingAp3->SetDefaultRoute(staWifi3Interface.GetAddress(0), 1);
   // the server
-  Ptr<Ipv4StaticRouting> staticRoutingH2 = ipv4RoutingHelper.GetStaticRouting (ipv4H2);
-  staticRoutingH2->SetDefaultRoute(csmaAp3Interface.GetAddress(0), 1);
+  Ptr<Ipv4StaticRouting> h2StaticRouting = ipv4RoutingHelper.GetStaticRouting (h2Ipv4);
+  h2StaticRouting->SetDefaultRoute(csmaAp3Interface.GetAddress(0), 1);
   // the client
-  Ptr<Ipv4StaticRouting> staticRoutingAp3Sta = ipv4RoutingHelper.GetStaticRouting (ipv4Ap3Sta);
-  staticRoutingAp3Sta->SetDefaultRoute(apWifiInterfaceC.GetAddress(0), 1);
+  Ptr<Ipv4StaticRouting> staticRoutingAp3Sta = ipv4RoutingHelper.GetStaticRouting (staAp3Ipv4);
+  staticRoutingAp3Sta->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
   
 
   // Add applications
@@ -455,7 +454,7 @@ main (int argc, char *argv[])
   
   // UDP server
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
-  ApplicationContainer serverApps = server.Install (terminalsNode.Get(1));
+  ApplicationContainer serverApps = server.Install (hostsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(stopTime));  
   
@@ -466,7 +465,7 @@ main (int argc, char *argv[])
   // if only 1, the switch could not learn, 5 is too much, which we don't need. 2 is proper
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (1024));
-  ApplicationContainer clientApps = client.Install(wifiAp3StaNodes.Get(0));    //terminalsNode.Get(0), wifiAp3Node
+  ApplicationContainer clientApps = client.Install(wifiAp3StaNodes.Get(0));    //hostsNode.Get(0), wifiAp3Node
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(stopTime));
   
@@ -477,7 +476,7 @@ main (int argc, char *argv[])
   // TCP server
   PacketSinkHelper sink ("ns3::TcpSocketFactory",
                          InetSocketAddress (Ipv4Address::GetAny (), port));
-  ApplicationContainer sinkApps = sink.Install (terminalsNode.Get(1));
+  ApplicationContainer sinkApps = sink.Install (hostsNode.Get(1));
   sinkApps.Start (Seconds (1.0));
   sinkApps.Stop (TimeValue(Seconds(stopTime)));
 
@@ -508,18 +507,18 @@ main (int argc, char *argv[])
       AsciiTraceHelper ascii;
       //csma.EnablePcapAll("goal-topo");
       csma.EnableAsciiAll (ascii.CreateFileStream ("trace/goal-topo.tr"));
-      wifiPhy.EnablePcap ("trace/goal-topo-ap1-wifi", wifiAp1Device);
-      wifiPhy.EnablePcap ("trace/goal-topo-ap2-wifi", wifiAp2Device);
-      wifiPhy.EnablePcap ("trace/goal-topo-ap3-wifi", wifiAp3Device);
-      wifiPhy.EnablePcap ("trace/goal-topo-ap3-sta1-wifi", wifiSta3Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap1-wifi", apWifi1Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap2-wifi", apWifi2Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap3-wifi", apWifi3Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap3-sta1-wifi", staWifi3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method
       csma.EnablePcap ("trace/goal-topo-switch1-csma", switch1Device);
       csma.EnablePcap ("trace/goal-topo-switch1-csma", switch2Device);
-      csma.EnablePcap ("trace/goal-topo-ap1-csma", csmaAp1Device);
-      csma.EnablePcap ("trace/goal-topo-ap2-csma", csmaAp2Device);
-      csma.EnablePcap ("trace/goal-topo-ap3-csma", csmaAp3Device);
-      csma.EnablePcap ("trace/goal-topo-H1-csma", terminalsDevice.Get(0));
-      csma.EnablePcap ("trace/goal-topo-H2-csma", terminalsDevice.Get(1));
+      csma.EnablePcap ("trace/goal-topo-ap1-csma", ap1CsmaDevice);
+      csma.EnablePcap ("trace/goal-topo-ap2-csma", ap2CsmaDevice);
+      csma.EnablePcap ("trace/goal-topo-ap3-csma", ap3CsmaDevice);
+      csma.EnablePcap ("trace/goal-topo-H1-csma", hostsDevice.Get(0));
+      csma.EnablePcap ("trace/goal-topo-H2-csma", hostsDevice.Get(1));
     }
 
   //
@@ -538,8 +537,8 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
   anim.SetConstantPosition(apsNode.Get(1),30,20);      // Ap2----node 3
   anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4
-  anim.SetConstantPosition(terminalsNode.Get(0),60,25);    // H1-----node 5
-  anim.SetConstantPosition(terminalsNode.Get(1),65,25);    // H2-----node 6
+  anim.SetConstantPosition(hostsNode.Get(0),60,25);    // H1-----node 5
+  anim.SetConstantPosition(hostsNode.Get(1),65,25);    // H2-----node 6
   anim.SetConstantPosition(wifiAp3StaNodes.Get(0),55,30);  //   -----node 14
 
   anim.EnablePacketMetadata();   // to see the details of each packet
