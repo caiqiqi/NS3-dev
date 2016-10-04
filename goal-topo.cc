@@ -533,9 +533,9 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
   anim.SetConstantPosition(apsNode.Get(1),30,20);      // Ap2----node 3
   anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4
-  anim.SetConstantPosition(hostsNode.Get(0),60,25);    // H1-----node 5
-  anim.SetConstantPosition(hostsNode.Get(1),65,25);    // H2-----node 6
-  anim.SetConstantPosition(staWifi3Nodes.Get(0),55,30);  //   -----node 14
+  anim.SetConstantPosition(hostsNode.Get(0),60,20);    // H1-----node 5
+  anim.SetConstantPosition(hostsNode.Get(1),65,20);    // H2-----node 6
+  anim.SetConstantPosition(staWifi3Nodes.Get(0),55,25);  //   -----node 14
 
   anim.EnablePacketMetadata();   // to see the details of each packet
 
