@@ -215,9 +215,17 @@ main (int argc, char *argv[])
   NodeContainer switchesNode, apsNode, hostsNode;
   NodeContainer staWifi1Nodes, staWifi2Nodes, staWifi3Nodes;
 
-  Ptr<Node> wifiAp1Node = apsNode.Get (0);
-  Ptr<Node> wifiAp2Node = apsNode.Get (1);
-  Ptr<Node> wifiAp3Node = apsNode.Get (2);
+  switchesNode. Create (nSwitch);    //2 Nodes(switch1 and switch2)-----node 0,1
+  apsNode.      Create (nAp);        //3 Nodes(Ap1 Ap2 and Ap3)-----node 2,3,4
+  hostsNode.    Create (nHost);      //2 Nodes(terminal1 and terminal2)-----node 5,6
+
+  staWifi1Nodes.Create(nAp1Station);    // node 7,8,9
+  staWifi2Nodes.Create(nAp2Station);    // node 10,11,12,13
+  staWifi3Nodes.Create(nAp3Station);    //  node 14
+  
+  Ptr<Node> ap1WifiNode = apsNode.Get (0);
+  Ptr<Node> ap2WifiNode = apsNode.Get (1);
+  Ptr<Node> ap3WifiNode = apsNode.Get (2);
   
 
   /* 这里用一个`csmaNodes`来包括 `apsNode` 和 `hostsNode` */
@@ -226,13 +234,6 @@ main (int argc, char *argv[])
   csmaNodes.Add(hostsNode);   // terminals index: 3,4 
   
   
-  switchesNode. Create (nSwitch);    //2 Nodes(switch1 and switch2)-----node 0,1
-  apsNode.      Create (nAp);        //3 Nodes(Ap1 Ap2 and Ap3)-----node 2,3,4
-  hostsNode.    Create (nHost);      //2 Nodes(terminal1 and terminal2)-----node 5,6
-
-  staWifi1Nodes.Create(nAp1Station);    // node 7,8,9
-  staWifi2Nodes.Create(nAp2Station);    // node 10,11,12,13
-  staWifi3Nodes.Create(nAp3Station);    //  node 14
   
 
   NS_LOG_INFO ("------------Creating Devices------------");
@@ -247,9 +248,9 @@ main (int argc, char *argv[])
   hostsDevice.Add (csmaDevices.Get(4));
   
   /* WIFI Devices */
-  NetDeviceContainer staWifi1Device, apWifi1Device;
-  NetDeviceContainer staWifi2Device, apWifi2Device;
-  NetDeviceContainer staWifi3Device, apWifi3Device;
+  NetDeviceContainer stasWifi1Device, apWifi1Device;
+  NetDeviceContainer stasWifi2Device, apWifi2Device;
+  NetDeviceContainer stasWifi3Device, apWifi3Device;
 
   
   NS_LOG_INFO ("------------Building Topology-------------");
@@ -292,22 +293,22 @@ main (int argc, char *argv[])
    * (就是等AP发现STA，而STA不主动发现AP)
    */
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
-  staWifi1Device = wifi.Install(wifiPhy, wifiMac, staWifi1Nodes );
+  stasWifi1Device = wifi.Install(wifiPhy, wifiMac, staWifi1Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
-  apWifi1Device   = wifi.Install(wifiPhy, wifiMac, wifiAp1Node);
+  apWifi1Device   = wifi.Install(wifiPhy, wifiMac, ap1WifiNode);
 
   //----------------------- Network AP2--------------------
   /* We want to make sure that our stations don't perform active probing. */
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
-  staWifi2Device = wifi.Install(wifiPhy, wifiMac, staWifi2Nodes );
+  stasWifi2Device = wifi.Install(wifiPhy, wifiMac, staWifi2Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
-  apWifi2Device   = wifi.Install(wifiPhy, wifiMac, wifiAp2Node);
+  apWifi2Device   = wifi.Install(wifiPhy, wifiMac, ap2WifiNode);
 
   //----------------------- Network AP3--------------------
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
-  staWifi3Device = wifi.Install(wifiPhy, wifiMac, staWifi3Nodes );
+  stasWifi3Device = wifi.Install(wifiPhy, wifiMac, staWifi3Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
-  apWifi3Device   = wifi.Install(wifiPhy, wifiMac, wifiAp3Node);
+  apWifi3Device   = wifi.Install(wifiPhy, wifiMac, ap3WifiNode);
 
   MobilityHelper mobility;
   /* for staWifi--1--Nodes */
@@ -408,38 +409,39 @@ main (int argc, char *argv[])
   wifi2Address.SetBase ("10.0.2.0", "255.255.255.0");
   wifi3Address.SetBase ("10.0.3.0", "255.255.255.0");
   
-  Ipv4InterfaceContainer ap1WifiInterface, stas1WifiInterface;
-  Ipv4InterfaceContainer ap2WifiInterface, stas2WifiInterface;
-  Ipv4InterfaceContainer ap3WifiInterface, stas3WifiInterface;
+  Ipv4InterfaceContainer apWifi1Interface, stasWifi1Interface;
+  Ipv4InterfaceContainer apWifi2Interface, stasWifi2Interface;
+  Ipv4InterfaceContainer apWifi3Interface, stasWifi3Interface;
 
   
-  ap1WifiInterface = wifi1Address.Assign (apWifi1Device);
-  stas1WifiInterface = wifi1Address.Assign (staWifi1Device); //TODO................
+  apWifi1Interface = wifi1Address.Assign (apWifi1Device);
+  stasWifi1Interface = wifi1Address.Assign (stasWifi1Device);
 
-  ap2WifiInterface = wifi2Address.Assign (apWifi2Device);
-  stas2WifiInterface = wifi2Address.Assign (staWifi2Device);
+  apWifi2Interface = wifi2Address.Assign (apWifi2Device);
+  stasWifi2Interface = wifi2Address.Assign (stasWifi2Device);
 
-  ap3WifiInterface  = wifi3Address.Assign (apWifi3Device);
-  stas3WifiInterface = wifi3Address.Assign (staWifi3Device);
+  apWifi3Interface  = wifi3Address.Assign (apWifi3Device);
+  stasWifi3Interface = wifi3Address.Assign (stasWifi3Device);
+
 
 
   NS_LOG_INFO ("-----------Enabling Static Routing.-----------");
   /* -----for StaticRouting(its very useful)----- */
   Ptr<Ipv4> ap3Ip = apsNode.Get(2)->GetObject<Ipv4> ();
   Ptr<Ipv4> h2Ip = hostsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
-  Ptr<Ipv4> staAp3Ip = staWifi3Nodes.Get(0)->GetObject<Ipv4> ();    // node 14
+  Ptr<Ipv4> sta1Wifi3Ip = staWifi3Nodes.Get(0)->GetObject<Ipv4> ();    // node 14
 
   /* the intermedia AP3 */
   //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (Ap3Ip);
   //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
-  //staticRoutingAp3->SetDefaultRoute(stas3WifiInterface.GetAddress(0), 1);
-  /* the server */
+  //staticRoutingAp3->SetDefaultRoute(stasWifi3Interface.GetAddress(0), 1);
+  /* the server  将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3 */
   Ptr<Ipv4StaticRouting> h2StaticRouting = ipv4RoutingHelper.GetStaticRouting (h2Ip);
   h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
-  /* the client */
-  Ptr<Ipv4StaticRouting> staticRoutingAp3Sta = ipv4RoutingHelper.GetStaticRouting (staAp3Ip);
-  staticRoutingAp3Sta->SetDefaultRoute(ap3WifiInterface.GetAddress(0), 1);
-  
+  /* the client  将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3  */
+  Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi3Ip);
+  sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
+
 
   NS_LOG_INFO ("-----------Creating Applications.-----------");
   uint16_t port = 9;   // Discard port (RFC 863)
@@ -458,7 +460,7 @@ main (int argc, char *argv[])
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (1024));
-  ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));    //hostsNode.Get(0), wifiAp3Node
+  ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));    //hostsNode.Get(0), ap3WifiNode
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(stopTime));
   
@@ -504,7 +506,7 @@ main (int argc, char *argv[])
       wifiPhy.EnablePcap ("trace/goal-topo-ap1-wifi", apWifi1Device);
       wifiPhy.EnablePcap ("trace/goal-topo-ap2-wifi", apWifi2Device);
       wifiPhy.EnablePcap ("trace/goal-topo-ap3-wifi", apWifi3Device);
-      wifiPhy.EnablePcap ("trace/goal-topo-ap3-sta1-wifi", staWifi3Device);
+      wifiPhy.EnablePcap ("trace/goal-topo-ap3-sta1-wifi", stasWifi3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method
       csma.EnablePcap ("trace/goal-topo-switch1-csma", switch1Device);
       csma.EnablePcap ("trace/goal-topo-switch1-csma", switch2Device);
