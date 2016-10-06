@@ -460,7 +460,7 @@ main (int argc, char *argv[])
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (1024));
-  ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));    //hostsNode.Get(0), ap3WifiNode
+  ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));    //hostsNode.Get(0), ap3WifiNode
   clientApps.Start (Seconds(2.0));  
   clientApps.Stop (Seconds(stopTime));
   
