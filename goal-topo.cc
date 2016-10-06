@@ -244,8 +244,8 @@ main (int argc, char *argv[])
   NetDeviceContainer switch1Device, switch2Device;
 
   csmaDevices = csma.Install (csmaNodes);
-  hostsDevice.Add (csmaDevices.Get(3));
-  hostsDevice.Add (csmaDevices.Get(4));
+  //hostsDevice.Add (csmaDevices.Get(3));
+  //hostsDevice.Add (csmaDevices.Get(4));
   
   /* WIFI Devices */
   NetDeviceContainer stasWifi1Device, apWifi1Device;
