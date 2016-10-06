@@ -314,7 +314,7 @@ main (int argc, char *argv[])
   /* for staWifi--1--Nodes */
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (0),
-    "MinY",      DoubleValue (25),
+    "MinY",      DoubleValue (30),
     "DeltaX",    DoubleValue (5),
     "DeltaY",    DoubleValue (5),
     "GridWidth", UintegerValue(3),
@@ -327,7 +327,7 @@ main (int argc, char *argv[])
   /* for staWifi--2--Nodes */
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (25),
-    "MinY",      DoubleValue (25),
+    "MinY",      DoubleValue (30),
     "DeltaX",    DoubleValue (5),
     "DeltaY",    DoubleValue (5),
     "GridWidth", UintegerValue(3),
@@ -535,7 +535,7 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4
   anim.SetConstantPosition(hostsNode.Get(0),65,20);    // H1-----node 5
   anim.SetConstantPosition(hostsNode.Get(1),70,20);    // H2-----node 6
-  anim.SetConstantPosition(staWifi3Nodes.Get(0),55,25);  //   -----node 14
+  anim.SetConstantPosition(staWifi3Nodes.Get(0),55,30);  //   -----node 14
 
   anim.EnablePacketMetadata();   // to see the details of each packet
 
