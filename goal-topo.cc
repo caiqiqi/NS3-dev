@@ -77,7 +77,7 @@ uint32_t nAp3Station = 1;
 
 //std::string str_outputFileName = "goal-topo.plt" ;
 std::ofstream outputFileName("goal-topo.plt");  //GenerateOutput()接收的是ofstream类型的 
-double nSamplingPeriod = 0.5;   // 抽样间隔，根据总的Simulation时间做相应的调整
+double nSamplingPeriod = 0.1;   // 抽样间隔，根据总的Simulation时间做相应的调整
 
 
 /* for udp-server-client application. */
@@ -159,7 +159,7 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
     // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
     // `10.0.2.2`是 Node#10  的IP
     // `10.0.1.2`是 Node#7   的IP
-    if ((t.sourceAddress=="10.0.2.2" && t.destinationAddress == "192.168.0.8"))
+    if ((t.sourceAddress=="10.0.2.2" && t.destinationAddress == "192.168.0.5"))
       {
           std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
