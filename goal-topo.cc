@@ -159,7 +159,7 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
     // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
     // `10.0.2.2`是 Node#10  的IP
     // `10.0.1.2`是 Node#7   的IP
-    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.8"))
+    if ((t.sourceAddress=="10.0.2.2" && t.destinationAddress == "192.168.0.8"))
       {
           std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
@@ -222,9 +222,9 @@ main (int argc, char *argv[])
    *
    */
   /* 传播延时速度是恒定的  */
-  //wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+  wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   /* 很多地方都用这个，不知道什么意思  */
-  wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
+  // wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");  // !!! 加了这句之后AP和STA就无法连接了
   //wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
   /* 不管发送功率是多少，都返回一个恒定的接收功率  */
   //wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
@@ -384,6 +384,13 @@ main (int argc, char *argv[])
   
   /*------------------ OpenFlow Switch && Controller------------*/
   OpenFlowSwitchHelper switchHelper;
+  /* OpenFlowSwitchNetDevice::SetController (Ptr<ofi::Controller>), 
+     Ptr<Node>::AddDevice (OpenFlowSwitchNetDevice), 
+     OpenFlowSwitchNetDevice::AddSwitchPort()
+  是在
+  OpenFlowSwitchHelper::Install()方法的实现中调用的
+
+  */
 
   Ptr<ns3::ofi::LearningController> controller = CreateObject<ns3::ofi::LearningController> ();
   if (!timeout.IsZero ()) controller->SetAttribute ("ExpirationTime", TimeValue (timeout));
