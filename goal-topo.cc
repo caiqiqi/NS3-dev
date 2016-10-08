@@ -156,7 +156,10 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
 
     /* 每个flow是根据包的五元组(协议，源IP/端口，目的IP/端口)来区分的 */
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.8")) // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
+    // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
+    // `10.0.2.2`是 Node#10  的IP
+    // `10.0.1.2`是 Node#7   的IP
+    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.8"))
       {
           std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
@@ -184,7 +187,10 @@ main (int argc, char *argv[])
 
   #ifdef NS3_OPENFLOW
   Config::SetDefault ("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue (true));
+  /* RTS/CTS 一种半双工的握手协议 */
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",UintegerValue (10));
+  /* 设置最大WIFI覆盖距离为5m, 超出这个距离之后将无法传输WIFI信号 */
+  //Config::SetDefault ("ns3::RangePropagationLossModel::MaxRange", DoubleValue (5));
   
   /* 设置命令行参数 */
   CommandSetup (argc, argv) ;
@@ -198,7 +204,30 @@ main (int argc, char *argv[])
   CsmaHelper csma;
   csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
+  
+  /* 调用YansWifiChannelHelper::Default() 已经添加了默认的传播损耗模型, 下面不要再手动添加 */
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
+  ////////////////////////////////////////
+  ////////////// LOSS MODEL //////////////
+  ////////////////////////////////////////
+
+  /* 
+   * `FixedRssLossModel` will cause the `rss to be fixed` regardless
+   * of the distance between the two stations, and the transmit power 
+   *
+   *
+   *
+   *
+   *
+   *
+   */
+  /* 传播延时速度是恒定的  */
+  //wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+  /* 很多地方都用这个，不知道什么意思  */
+  wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");
+  //wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
+  /* 不管发送功率是多少，都返回一个恒定的接收功率  */
+  //wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
   wifiPhy.SetChannel (wifiChannel.Create());
   //wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
@@ -208,6 +237,7 @@ main (int argc, char *argv[])
    */
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
   //wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
+  //wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
   WifiMacHelper wifiMac;
 
  
@@ -426,21 +456,47 @@ main (int argc, char *argv[])
 
 
   NS_LOG_INFO ("-----------Enabling Static Routing.-----------");
+  /**
+   * Ipv4StaticRouting::SetDefaultRoute()
+   * 
+   * Add a default route to the static routing table.
+   * This method tells the routing system what to do 
+   * in the case where a specific route to a destination is not found. 
+   * The system forwards packets to the specified node in the hope 
+   * that it knows better how to route the packet.
+   * 
+   * @param: 
+   *        metric: 度量值。是跟一组参数有关，包括带宽，通信代价，延迟，跳数，负载，路径成本和可靠性
+   *                这个值越小 就会越优先选择
+   */
+
   /* -----for StaticRouting(its very useful)----- */
   Ptr<Ipv4> ap3Ip = apsNode.Get(2)->GetObject<Ipv4> ();
   Ptr<Ipv4> h2Ip = hostsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
-  Ptr<Ipv4> sta1Wifi3Ip = staWifi3Nodes.Get(0)->GetObject<Ipv4> ();    // node 14
+  // for node 14
+  //Ptr<Ipv4> sta1Wifi3Ip = staWifi3Nodes.Get(0)->GetObject<Ipv4> ();
+  // for node 10
+  Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
 
   /* the intermedia AP3 */
   //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (Ap3Ip);
   //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
   //staticRoutingAp3->SetDefaultRoute(stasWifi3Interface.GetAddress(0), 1);
-  /* the server  将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3 */
+
+  /* the server  ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3 */
   Ptr<Ipv4StaticRouting> h2StaticRouting = ipv4RoutingHelper.GetStaticRouting (h2Ip);
-  h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
-  /* the client  将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3  */
-  Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi3Ip);
-  sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
+  // for node 14
+  //h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
+  // for node 10
+  h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
+  
+  /* the client  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3  */
+  // for node 14
+  //Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi3Ip); // when node 14
+  //sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
+  // for node 10
+  Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi2Ip); // when node 10
+  sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
 
 
   NS_LOG_INFO ("-----------Creating Applications.-----------");
@@ -450,6 +506,7 @@ main (int argc, char *argv[])
 
   /* UDP server */
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
+  // for node 6
   ApplicationContainer serverApps = server.Install (hostsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(stopTime));  
@@ -460,8 +517,13 @@ main (int argc, char *argv[])
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (1024));
-  ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));    //hostsNode.Get(0), ap3WifiNode
-  clientApps.Start (Seconds(2.0));  
+  // for node 14
+  //ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
+  // for node 10
+  ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
+  // for node 5
+  //ApplicationContainer clientApps = client.Install(hostsNode.Get(0));
+  clientApps.Start (Seconds(1.1));  
   clientApps.Stop (Seconds(stopTime));
   
 
