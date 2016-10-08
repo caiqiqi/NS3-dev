@@ -161,14 +161,15 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
     // `10.0.1.2`是 Node#7   的IP
     if ((t.sourceAddress=="10.0.2.2" && t.destinationAddress == "192.168.0.5"))
       {
-          std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+          std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")";
+          std::cout << "Simulation time: " << Simulator::Now ().GetSeconds () << " s\n";
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
           std::cout << "  Throughput: " <<  localThrou << " Mbps\n";
       }
      }
   
 
-  dataset->SetTitle ("Throughput VS Time");
+  //dataset->SetTitle ("Throughput VS Time");   // 这句好像不起什么作用
   dataset->SetStyle (Gnuplot2dDataset::LINES);
   dataset->Add ((Simulator::Now ()).GetSeconds (), localThrou);
 
