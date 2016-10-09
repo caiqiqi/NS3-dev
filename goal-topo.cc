@@ -161,8 +161,10 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
     // `10.0.1.2`是 Node#7   的IP
     if ((t.sourceAddress=="10.0.2.2" && t.destinationAddress == "192.168.0.5"))
       {
-          //std::cout << "Flow " << i->first  << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")";
-          std::cout << "Simulation time: " << Simulator::Now ().GetSeconds () << " s\n";
+          // UDP_PROT_NUMBER = 17
+          std::cout << "Flow " << i->first  << "  Protocol  " << unsigned(t.protocol) << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+          std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s\n";
+          std::cout << "Lost Packets = " << i->second.lostPackets << "\n";
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
           std::cout << "  Throughput: " <<  localThrou << " Mbps\n";
       }
@@ -358,7 +360,7 @@ main (int argc, char *argv[])
   /* for staWifi--2--Nodes */
   mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (25),
-    "MinY",      DoubleValue (30),
+    "MinY",      DoubleValue (35),
     "DeltaX",    DoubleValue (5),
     "DeltaY",    DoubleValue (5),
     "GridWidth", UintegerValue(3),
@@ -598,14 +600,14 @@ main (int argc, char *argv[])
   //csma.EnablePcapAll ("goal-topo", false);
 
   AnimationInterface anim ("trace/goal-topo.xml");
-  anim.SetConstantPosition(switchNode1,30,10);             // s1-----node 0
-  anim.SetConstantPosition(switchNode2,65,10);             // s2-----node 1
+  anim.SetConstantPosition(switchNode1,30,0);             // s1-----node 0
+  anim.SetConstantPosition(switchNode2,65,0);             // s2-----node 1
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
   anim.SetConstantPosition(apsNode.Get(1),30,20);      // Ap2----node 3
   anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4
   anim.SetConstantPosition(hostsNode.Get(0),65,20);    // H1-----node 5
   anim.SetConstantPosition(hostsNode.Get(1),70,20);    // H2-----node 6
-  anim.SetConstantPosition(staWifi3Nodes.Get(0),55,30);  //   -----node 14
+  anim.SetConstantPosition(staWifi3Nodes.Get(0),55,40);  //   -----node 14
 
   anim.EnablePacketMetadata();   // to see the details of each packet
 
