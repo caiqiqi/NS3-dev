@@ -136,16 +136,16 @@ CommandSetup (int argc, char **argv)
  * 由于包是在IP层进行track的，所以任何的四层(TCP)重传的包，都会被认为是一个新的包
  */
 void
-CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2dDataset* dataset)
+CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset)
 {
   
-  flowMon->CheckForLostPackets ();
-  std::map<FlowId, FlowMonitor::FlowStats> stats = flowMon->GetFlowStats ();
+  double localThrou = 0.0;
+  monitor->CheckForLostPackets ();
+  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
   /* since fmhelper is a pointer, we should use it as a pointer.
    * `fmhelper->GetClassifier ()` instead of `fmhelper.GetClassifier ()`
    */
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
-  double localThrou = 0;
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
     {
     /* 
@@ -168,19 +168,33 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> flowMon, Gnuplot2
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
           std::cout << "  Throughput: " <<  localThrou << " Mbps\n";
       }
+     
+      // 每迭代一次就把`时间`和`吞吐量`加入到dataset里面
+      dataset.Add ((Simulator::Now ()).GetSeconds (), localThrou);
+
      }
-  
-
-  //dataset->SetTitle ("Throughput VS Time");   // 这句好像不起什么作用
-  dataset->SetStyle (Gnuplot2dDataset::LINES);
-  dataset->Add ((Simulator::Now ()).GetSeconds (), localThrou);
-
   /* check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
-   * 表示每隔nSamplingPeriod时间，即0.5秒
+   * 表示每隔nSamplingPeriod时间
    */
   Simulator::Schedule (Seconds(nSamplingPeriod), 
-    &CheckThroughput, fmhelper, flowMon, dataset);
-  /* 这里的这个Simulator::Schedule() 与后面main()里面传的参数格式不一样。 */
+    &CheckThroughput, fmhelper, monitor, dataset);
+}
+
+// By Joahannes Costa from GitHub
+void DelayMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset1){
+  
+  double delay = 0.0;
+  monitor->CheckForLostPackets(); 
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
+
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats){ 
+      //Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
+      delay = stats->second.delaySum.GetSeconds ();
+      dataset1.Add((double)Simulator::Now().GetSeconds(), (double)delay);
+    }
+  
+  Simulator::Schedule(Seconds(1), &DelayMonitor, fmhelper, monitor, dataset1);
 }
 
 
@@ -202,6 +216,8 @@ main (int argc, char *argv[])
   /*------- for gnuplot ------*/
   Gnuplot gnuplot;
   Gnuplot2dDataset dataset;
+  //dataset->SetTitle ("Throughput VS Time");   // 这句好像不起什么作用
+  dataset.SetStyle (Gnuplot2dDataset::LINES);
 
   /*----- init Helpers ----- */
   CsmaHelper csma;
@@ -618,7 +634,7 @@ main (int argc, char *argv[])
   FlowMonitorHelper flowmon;
   Ptr<FlowMonitor> monitor = flowmon.InstallAll();
   /* 表示从第#1秒开始 */
-  Simulator::Schedule(Seconds(1),&CheckThroughput, &flowmon, monitor, &dataset);
+  Simulator::Schedule(Seconds(1),&CheckThroughput, &flowmon, monitor, dataset);
 
   NS_LOG_INFO ("------------Running Simulation.------------");
   /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
@@ -628,7 +644,7 @@ main (int argc, char *argv[])
   Simulator::Run ();
 
   // 测吞吐量
-  CheckThroughput(&flowmon, monitor, &dataset);
+  CheckThroughput(&flowmon, monitor, dataset);
 
 
   // monitor->SerializeToXmlFile("trace/goal-topo.flowmon", true, true);
