@@ -48,6 +48,8 @@
 #include "ns3/netanim-module.h"
 
 #include <iostream>
+#include <stdint.h>
+#include <sstream>
 #include <fstream>
 
 
@@ -488,7 +490,13 @@ main (int argc, char *argv[])
   */
 
 
-  
+  // Trace routing tables 
+  Ipv4GlobalRoutingHelper g;
+  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("goal-topo-trad/routes.txt", std::ios::out);
+  g.PrintRoutingTableAllAt (Seconds (4.0), routingStream);
+
+
+
   /** GlobalRouting does NOT work with Wi-Fi.
    * https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
    */
