@@ -75,7 +75,7 @@ uint32_t nAp3Station = 1;
 
 
 //std::string str_outputFileName = "goal-topo-trad.plt" ;
-std::ofstream outputFileName("goal-topo-trad.plt");  //GenerateOutput()接收的是ofstream类型的 
+std::ofstream outputFileName("trace/goal-topo-trad.plt");  //GenerateOutput()接收的是ofstream类型的 
 double nSamplingPeriod = 0.1;   // 抽样间隔，根据总的Simulation时间做相应的调整
 
 
