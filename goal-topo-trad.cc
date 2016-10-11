@@ -312,7 +312,7 @@ main (int argc, char *argv[])
   switch2Devices. Add(link.Get(1));
   
   /* #2 Connect AP1, AP2 and AP3 to traditional switch1 */  
-  for (int i = 0; i < nAp; i++)
+  for (uint32_t i = 0; i < nAp; i++)
   {
     link = csma.Install (NodeContainer(apsNode.Get(i), switchesNode.Get(0)));   // Get(0) for switch1
     ap1CsmaDevice. Add(link.Get(0));
@@ -321,7 +321,7 @@ main (int argc, char *argv[])
 
 
   /* #3 Connect host1 and host2 to traditonal switch2  */
-  for (int i = 0; i < nHost; i++)
+  for (uint32_t i = 0; i < nHost; i++)
   {
     link = csma.Install (NodeContainer(hostsNode.Get(i), switchesNode.Get(1)));   // Get(1) for switch2
     hostsDevice. Add(link.Get(0));
