@@ -34,13 +34,10 @@
 #include "ns3/internet-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
-#include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
 //#include "ns3/flow-monitor-helper.h"
 #include "ns3/flow-monitor-module.h"
-#include "ns3/openflow-module.h"
 #include "ns3/log.h"
-#include "ns3/olsr-helper.h"
 // 给传统交换机(BridgeNetDevice)
 #include "ns3/bridge-module.h"
 
@@ -399,28 +396,13 @@ main (int argc, char *argv[])
   mobility2.Install (csmaNodes);    // csmaNodes includes APs and terminals
   mobility2.Install (staWifi3Nodes);
   mobility2.Install (switchesNode);
-
-  /* Create the switch netdevice,which will do the packet switching */
-  Ptr<Node> switchNode1 = switchesNode.Get (0);
-  Ptr<Node> switchNode2 = switchesNode.Get (1);
   
 
 
-  /* We enable OLSR (which will be consulted at a higher priority than
-   * the global routing) on the backbone nodes
-   */
-  NS_LOG_INFO ("----------Enabling OLSR routing && Internet stack----------");
-  
-  OlsrHelper olsr;
-  Ipv4StaticRoutingHelper ipv4RoutingHelper;
-  Ipv4ListRoutingHelper list;
+  NS_LOG_INFO ("----------Installing Internet stack----------");
 
-  list.Add (ipv4RoutingHelper, 0);
-  list.Add (olsr, 10);
-
-  /* Add internet stack to the terminals */
+  /* Add internet stack to all the nodes, expect switches(交换机不用) */
   InternetStackHelper internet;
-  internet.SetRoutingHelper (list); // has effect on the next Install ()
   internet.Install (csmaNodes);
   internet.Install (staWifi1Nodes);
   internet.Install (staWifi2Nodes);
@@ -463,50 +445,6 @@ main (int argc, char *argv[])
   apWifi3Interface  = wifi3Address.Assign (apWifi3Device);
   stasWifi3Interface = wifi3Address.Assign (stasWifi3Device);
 
-
-
-  NS_LOG_INFO ("-----------Enabling Static Routing.-----------");
-  /**
-   * Ipv4StaticRouting::SetDefaultRoute()
-   * 
-   * Add a default route to the static routing table.
-   * This method tells the routing system what to do 
-   * in the case where a specific route to a destination is not found. 
-   * The system forwards packets to the specified node in the hope 
-   * that it knows better how to route the packet.
-   * 
-   * @param: 
-   *        metric: 度量值。是跟一组参数有关，包括带宽，通信代价，延迟，跳数，负载，路径成本和可靠性
-   *                这个值越小 就会越优先选择
-   */
-
-  /* -----for StaticRouting(its very useful)----- */
-  Ptr<Ipv4> ap3Ip = apsNode.Get(2)->GetObject<Ipv4> ();
-  Ptr<Ipv4> h2Ip = hostsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
-  // for node 14
-  //Ptr<Ipv4> sta1Wifi3Ip = staWifi3Nodes.Get(0)->GetObject<Ipv4> ();
-  // for node 10
-  Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
-
-  /* the intermedia AP3 */
-  //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (Ap3Ip);
-  //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
-  //staticRoutingAp3->SetDefaultRoute(stasWifi3Interface.GetAddress(0), 1);
-
-  /* the server  ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3 */
-  Ptr<Ipv4StaticRouting> h2StaticRouting = ipv4RoutingHelper.GetStaticRouting (h2Ip);
-  // for node 14
-  //h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
-  // for node 10
-  h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
-  
-  /* the client  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3  */
-  // for node 14
-  //Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi3Ip); // when node 14
-  //sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
-  // for node 10
-  Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi2Ip); // when node 10
-  sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
 
 
   NS_LOG_INFO ("-----------Creating Applications.-----------");
@@ -600,8 +538,8 @@ main (int argc, char *argv[])
   //csma.EnablePcapAll ("goal-topo-trad", false);
 
   AnimationInterface anim ("goal-topo-trad/goal-topo-trad.xml");
-  anim.SetConstantPosition(switchNode1,30,0);             // s1-----node 0
-  anim.SetConstantPosition(switchNode2,65,0);             // s2-----node 1
+  anim.SetConstantPosition(switch1Node,30,0);             // s1-----node 0
+  anim.SetConstantPosition(switch2Node,65,0);             // s2-----node 1
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
   anim.SetConstantPosition(apsNode.Get(1),30,20);      // Ap2----node 3
   anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4

@@ -434,7 +434,7 @@ main (int argc, char *argv[])
   list.Add (ipv4RoutingHelper, 0);
   list.Add (olsr, 10);
 
-  /* Add internet stack to the terminals */
+  /* Add internet stack to all the nodes, expect switches(交换机不用) */
   InternetStackHelper internet;
   internet.SetRoutingHelper (list); // has effect on the next Install ()
   internet.Install (csmaNodes);
