@@ -340,20 +340,20 @@ main (int argc, char *argv[])
   /* We want to make sure that our stations don't perform active probing.
    * (就是等AP发现STA，而STA不主动发现AP)
    */
-  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
+  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (true));
   stasWifi1Device = wifi.Install(wifiPhy, wifiMac, staWifi1Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
   apWifi1Device   = wifi.Install(wifiPhy, wifiMac, ap1WifiNode);
 
   //----------------------- Network AP2--------------------
   /* We want to make sure that our stations don't perform active probing. */
-  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
+  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (true));
   stasWifi2Device = wifi.Install(wifiPhy, wifiMac, staWifi2Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
   apWifi2Device   = wifi.Install(wifiPhy, wifiMac, ap2WifiNode);
 
   //----------------------- Network AP3--------------------
-  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
+  wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (true));
   stasWifi3Device = wifi.Install(wifiPhy, wifiMac, staWifi3Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
   apWifi3Device   = wifi.Install(wifiPhy, wifiMac, ap3WifiNode);
@@ -549,7 +549,7 @@ main (int argc, char *argv[])
   Simulator::Run ();
 
   // 测吞吐量
-  CheckThroughput(&flowmon, monitor, dataset);
+  CheckThroughput(&flowmon, monitor, dataset);   // 这句好像是多余的啊，随便，反正只加了一次调用
 
 
   // monitor->SerializeToXmlFile("trace/goal-topo-trad.flowmon", true, true);
