@@ -273,21 +273,21 @@ main (int argc, char *argv[])
   
 
   /* 这里用一个`csmaNodes`来包括 `apsNode` 和 `hostsNode` */
-  NodeContainer csmaNodes;
-  csmaNodes.Add(apsNode);     // APs index : 0,1,2
-  csmaNodes.Add(hostsNode);   // terminals index: 3,4 
+  //NodeContainer csmaNodes;
+  //csmaNodes.Add(apsNode);     // APs index : 0,1,2
+  //csmaNodes.Add(hostsNode);   // terminals index: 3,4 
   
   
   
 
   NS_LOG_INFO ("------------Creating Devices------------");
   /* CSMA Devices */
-  NetDeviceContainer csmaDevices;
+  //NetDeviceContainer csmaDevices; // 这个是不是多余的，不要行不行？
   NetDeviceContainer ap1CsmaDevice, ap2CsmaDevice, ap3CsmaDevice;
   NetDeviceContainer hostsDevice;
   NetDeviceContainer switch1Devices, switch2Devices;
 
-  csmaDevices = csma.Install (csmaNodes);
+  // csmaDevices = csma.Install (csmaNodes);  // 这个是不是多余的，不装行不行？
   //hostsDevice.Add (csmaDevices.Get(3));
   //hostsDevice.Add (csmaDevices.Get(4));
   
@@ -392,7 +392,8 @@ main (int argc, char *argv[])
    * only stations in AP1 and AP2 is mobile, the only station in AP3 is not mobile.
    */
   mobility2.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility2.Install (csmaNodes);    // csmaNodes includes APs and terminals
+  mobility2.Install (apsNode);    // csmaNodes includes APs and terminals
+  mobility2.Install (hostsNode);
   mobility2.Install (staWifi3Nodes);
   mobility2.Install (switchesNode);
   
@@ -402,7 +403,8 @@ main (int argc, char *argv[])
 
   /* Add internet stack to all the nodes, expect switches(交换机不用) */
   InternetStackHelper internet;
-  internet.Install (csmaNodes);
+  internet.Install (apsNode);
+  internet.Install (hostsNode);
   internet.Install (staWifi1Nodes);
   internet.Install (staWifi2Nodes);
   internet.Install (staWifi3Nodes);

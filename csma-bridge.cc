@@ -25,6 +25,7 @@
 //        n2     n3
 //
 //
+//  这里n0,n1,n2,n3的地位是一样的。并不是有两张csma网卡，而是只有与switch相连的那一张网卡
 // - CBR/UDP flows from n0 to n1 and from n3 to n0
 // - DropTail queues 
 // - Tracing of queues and packet receptions to file "csma-bridge.tr"
