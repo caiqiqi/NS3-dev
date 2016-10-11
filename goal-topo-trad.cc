@@ -327,12 +327,22 @@ main (int argc, char *argv[])
   Ptr<Node> switch1Node = switchesNode.Get(0);
   Ptr<Node> switch2Node = switchesNode.Get(1);
 
+  
+  NS_LOG_INFO ("----------Installing Bridge NetDevice----------");
   /*!!!!!!!!!!!! 关键的 BridgeHelper !!!!!!!!!!!*/
   BridgeHelper bridge1, bridge2;
+  // 下面表示在某Node上安装BridgeNetDevice
+  // This method creates an ns3::BridgeNetDevice, adds the device to the node
   bridge1. Install(switch1Node, switch1Devices);
   bridge2. Install(switch2Node, switch2Devices);
 
+  //--------TODO
+  BridgeHelper bridgeForAP1, bridgeForAP2, bridgeForAP3;
+  bridgeForAP1. Install(apsNode.Get (0), NetDeviceContainer(apWifi1Device, ap1CsmaDevice));
+  bridgeForAP2. Install(apsNode.Get (1), NetDeviceContainer(apWifi2Device, ap2CsmaDevice));
+  bridgeForAP3. Install(apsNode.Get (2), NetDeviceContainer(apWifi3Device, ap3CsmaDevice));
 
+  NS_LOG_INFO ("----------Configuring WIFI networks----------");
   Ssid ssid1 = Ssid ("ssid-AP1");
   Ssid ssid2 = Ssid ("ssid-AP2");
   Ssid ssid3 = Ssid ("ssid-AP3");
