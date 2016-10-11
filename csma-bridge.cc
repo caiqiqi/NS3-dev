@@ -29,6 +29,12 @@
 // - DropTail queues 
 // - Tracing of queues and packet receptions to file "csma-bridge.tr"
 
+/*
+成功之后，在PyViz里面可以看到
+-- 中心的Switch有 5 个网卡，其中 4个CSMA网卡，1个bridge网卡
+-- 周围的四个terminal节点有两张网卡，一张回环网卡，一张CSMA网卡
+*/
+
 #include <iostream>
 #include <fstream>
 
@@ -38,6 +44,8 @@
 #include "ns3/bridge-module.h"
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
+
+#include "ns3/netanim-module.h"
 
 using namespace ns3;
 
@@ -144,7 +152,7 @@ main (int argc, char *argv[])
   // Trace output will be sent to the file "csma-bridge.tr"
   //
   AsciiTraceHelper ascii;
-  csma.EnableAsciiAll (ascii.CreateFileStream ("csma-bridge.tr"));
+  csma.EnableAsciiAll (ascii.CreateFileStream ("csma-bridge/csma-bridge.tr"));
 
   //
   // Also configure some tcpdump traces; each interface will be traced.
@@ -153,7 +161,16 @@ main (int argc, char *argv[])
   // and can be read by the "tcpdump -r" command (use "-tt" option to
   // display timestamps correctly)
   //
-  csma.EnablePcapAll ("csma-bridge", false);
+  csma.EnablePcapAll ("csma-bridge/csma-bridge", true);
+
+  AnimationInterface anim ("csma-bridge/csma-bridge.xml");
+  anim.SetConstantPosition(terminals.Get(0),10,10); 
+  anim.SetConstantPosition(terminals.Get(1),20,10);
+  anim.SetConstantPosition(terminals.Get(2),10,30);
+  anim.SetConstantPosition(terminals.Get(3),20,30);
+  anim.SetConstantPosition(csmaSwitch.Get(0),15,20);
+
+  anim.EnablePacketMetadata();   // to see the details of each packet
 
   //
   // Now, do the actual simulation.
