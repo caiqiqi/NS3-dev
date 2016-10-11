@@ -289,7 +289,7 @@ main (int argc, char *argv[])
   NetDeviceContainer csmaDevices;
   NetDeviceContainer ap1CsmaDevice, ap2CsmaDevice, ap3CsmaDevice;
   NetDeviceContainer hostsDevice;
-  NetDeviceContainer switch1Device, switch2Device;
+  NetDeviceContainer switch1Devices, switch2Devices;
 
   csmaDevices = csma.Install (csmaNodes);
   //hostsDevice.Add (csmaDevices.Get(3));
@@ -304,33 +304,37 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("------------Building Topology-------------");
 
   NetDeviceContainer link;
-  /* Create the csma links, from each AP && terminals to the switch */
 
-  /* Connect ofSwitch1 to ofSwitch2 */
-  link = csma.Install(NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
-  switch1Device.Add(link.Get(0));
-  switch2Device.Add(link.Get(1));
+
+  /* #1 Connect traditional switch1 to traditional switch2 */
+  link = csma.Install (NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
+  switch1Devices. Add(link.Get(0));
+  switch2Devices. Add(link.Get(1));
   
-  /* Connect AP1, AP2 and AP3 to ofSwitch1 */  
-  link = csma.Install(NodeContainer(csmaNodes.Get(0),switchesNode.Get(0)));
-  ap1CsmaDevice.Add(link.Get(0));  
-  switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(csmaNodes.Get(1),switchesNode.Get(0)));
-  ap2CsmaDevice.Add(link.Get(0));  
-  switch1Device.Add(link.Get(1));
-  link = csma.Install(NodeContainer(csmaNodes.Get(2),switchesNode.Get(0)));
-  ap3CsmaDevice.Add(link.Get(0));
-  switch1Device.Add(link.Get(1));
+  /* #2 Connect AP1, AP2 and AP3 to traditional switch1 */  
+  for (int i = 0; i < nAp; i++)
+  {
+    link = csma.Install (NodeContainer(apsNode.Get(i), switchesNode.Get(0)));   // Get(0) for switch1
+    ap1CsmaDevice. Add(link.Get(0));
+    switch1Devices. Add(link.Get(1));
+  }
 
 
-  /* Connect terminal1 and terminal2 to ofSwitch2  */
-  for (int i = 3; i < 5; i++)
-    {
-      link = csma.Install(NodeContainer(csmaNodes.Get(i), switchesNode.Get(1)));
-      hostsDevice.Add(link.Get(0));
-      switch2Device.Add(link.Get(1));
+  /* #3 Connect host1 and host2 to traditonal switch2  */
+  for (int i = 0; i < nHost; i++)
+  {
+    link = csma.Install (NodeContainer(hostsNode.Get(i), switchesNode.Get(1)));   // Get(1) for switch2
+    hostsDevice. Add(link.Get(0));
+    switch2Devices. Add(link.Get(1));
+  }
 
-    }
+  Ptr<Node> switch1Node = switchesNode.Get(0);
+  Ptr<Node> switch2Node = switchesNode.Get(1);
+
+  /*!!!!!!!!!!!! 关键的 BridgeHelper !!!!!!!!!!!*/
+  BridgeHelper bridge1, bridge2;
+  bridge1. Install(switch1Node, switch1Devices);
+  bridge2. Install(switch2Node, switch2Devices);
 
 
   Ssid ssid1 = Ssid ("ssid-AP1");
@@ -576,8 +580,8 @@ main (int argc, char *argv[])
       wifiPhy.EnablePcap ("trace/goal-topo-trad-ap3-wifi", apWifi3Device);
       wifiPhy.EnablePcap ("trace/goal-topo-trad-ap3-sta1-wifi", stasWifi3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method
-      csma.EnablePcap ("trace/goal-topo-trad-switch1-csma", switch1Device);
-      csma.EnablePcap ("trace/goal-topo-trad-switch2-csma", switch2Device);
+      csma.EnablePcap ("trace/goal-topo-trad-switch1-csma", switch1Devices);
+      csma.EnablePcap ("trace/goal-topo-trad-switch2-csma", switch2Devices);
       csma.EnablePcap ("trace/goal-topo-trad-ap1-csma", ap1CsmaDevice);
       csma.EnablePcap ("trace/goal-topo-trad-ap2-csma", ap2CsmaDevice);
       csma.EnablePcap ("trace/goal-topo-trad-ap3-csma", ap3CsmaDevice);
