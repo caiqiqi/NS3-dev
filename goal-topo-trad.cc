@@ -57,7 +57,7 @@
 
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("GoalTopoTradScript");
+NS_LOG_COMPONENT_DEFINE ("GoalTopo-Trad-Script");
 
 
 bool tracing  = true;
