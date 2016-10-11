@@ -439,6 +439,11 @@ main (int argc, char *argv[])
   stasWifi2Interface = ip.Assign (stasWifi2Device); // 192.168.0.6~9
   stasWifi3Interface = ip.Assign (stasWifi3Device); // 192.168.0.10
 
+  //!!!!看到打印出的路由表之后，看来还是要给AP分配IP啊(虽然可以暂时不要interface)，不然都无法路由
+  ip.Assign (apWifi1Device);                        // 192.168.0.11
+  ip.Assign (apWifi2Device);                        // 192.168.0.12
+  ip.Assign (apWifi3Device);                        // 192.168.0.13
+
 
 
   NS_LOG_INFO ("-----------Creating Applications.-----------");
