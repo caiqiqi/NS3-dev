@@ -152,7 +152,7 @@ main (int argc, char *argv[])
   // Trace output will be sent to the file "csma-bridge.tr"
   //
   AsciiTraceHelper ascii;
-  csma.EnableAsciiAll (ascii.CreateFileStream ("trace/csma-bridge/csma-bridge.tr"));
+  csma.EnableAsciiAll (ascii.CreateFileStream ("csma-bridge/csma-bridge.tr"));
 
   //
   // Also configure some tcpdump traces; each interface will be traced.
@@ -161,9 +161,9 @@ main (int argc, char *argv[])
   // and can be read by the "tcpdump -r" command (use "-tt" option to
   // display timestamps correctly)
   //
-  csma.EnablePcapAll ("trace/csma-bridge/csma-bridge", true);
+  csma.EnablePcapAll ("csma-bridge/csma-bridge", true);
 
-  AnimationInterface anim ("trace/csma-bridge/csma-bridge.xml");
+  AnimationInterface anim ("csma-bridge/csma-bridge.xml");
   anim.SetConstantPosition(terminals.Get(0),10,10); 
   anim.SetConstantPosition(terminals.Get(1),20,10);
   anim.SetConstantPosition(terminals.Get(2),10,30);

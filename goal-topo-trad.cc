@@ -515,6 +515,7 @@ main (int argc, char *argv[])
       csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo-trad/goal-topo-trad.tr"));
       wifiPhy.EnablePcap ("goal-topo-trad/goal-topo-trad-ap1-wifi", apWifi1Device);
       wifiPhy.EnablePcap ("goal-topo-trad/goal-topo-trad-ap2-wifi", apWifi2Device);
+      wifiPhy.EnablePcap ("goal-topo-trad/goal-topo-trad-ap2-sta1-wifi", stasWifi2Device);
       wifiPhy.EnablePcap ("goal-topo-trad/goal-topo-trad-ap3-wifi", apWifi3Device);
       wifiPhy.EnablePcap ("goal-topo-trad/goal-topo-trad-ap3-sta1-wifi", stasWifi3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method

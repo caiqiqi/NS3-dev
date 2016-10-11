@@ -590,19 +590,20 @@ main (int argc, char *argv[])
     {
       AsciiTraceHelper ascii;
       //csma.EnablePcapAll("goal-topo");
-      csma.EnableAsciiAll (ascii.CreateFileStream ("trace/goal-topo/goal-topo.tr"));
-      wifiPhy.EnablePcap ("trace/goal-topo/goal-topo-ap1-wifi", apWifi1Device);
-      wifiPhy.EnablePcap ("trace/goal-topo/goal-topo-ap2-wifi", apWifi2Device);
-      wifiPhy.EnablePcap ("trace/goal-topo/goal-topo-ap3-wifi", apWifi3Device);
-      wifiPhy.EnablePcap ("trace/goal-topo/goal-topo-ap3-sta1-wifi", stasWifi3Device);
+      csma.EnableAsciiAll (ascii.CreateFileStream ("goal-topo/goal-topo.tr"));
+      wifiPhy.EnablePcap ("goal-topo/goal-topo-ap1-wifi", apWifi1Device);
+      wifiPhy.EnablePcap ("goal-topo/goal-topo-ap2-wifi", apWifi2Device);
+      wifiPhy.EnablePcap ("goal-topo/goal-topo-ap2-sta1-wifi", stasWifi2Device);
+      wifiPhy.EnablePcap ("goal-topo/goal-topo-ap3-wifi", apWifi3Device);
+      wifiPhy.EnablePcap ("goal-topo/goal-topo-ap3-sta1-wifi", stasWifi3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method
-      csma.EnablePcap ("trace/goal-topo/goal-topo-switch1-csma", switch1Device);
-      csma.EnablePcap ("trace/goal-topo/goal-topo-switch1-csma", switch2Device);
-      csma.EnablePcap ("trace/goal-topo/goal-topo-ap1-csma", ap1CsmaDevice);
-      csma.EnablePcap ("trace/goal-topo/goal-topo-ap2-csma", ap2CsmaDevice);
-      csma.EnablePcap ("trace/goal-topo/goal-topo-ap3-csma", ap3CsmaDevice);
-      csma.EnablePcap ("trace/goal-topo/goal-topo-H1-csma", hostsDevice.Get(0));
-      csma.EnablePcap ("trace/goal-topo/goal-topo-H2-csma", hostsDevice.Get(1));
+      csma.EnablePcap ("goal-topo/goal-topo-switch1-csma", switch1Device);
+      csma.EnablePcap ("goal-topo/goal-topo-switch2-csma", switch2Device);
+      csma.EnablePcap ("goal-topo/goal-topo-ap1-csma", ap1CsmaDevice);
+      csma.EnablePcap ("goal-topo/goal-topo-ap2-csma", ap2CsmaDevice);
+      csma.EnablePcap ("goal-topo/goal-topo-ap3-csma", ap3CsmaDevice);
+      csma.EnablePcap ("goal-topo/goal-topo-H1-csma", hostsDevice.Get(0));
+      csma.EnablePcap ("goal-topo/goal-topo-H2-csma", hostsDevice.Get(1));
     }
 
   //
@@ -615,7 +616,7 @@ main (int argc, char *argv[])
   //
   //csma.EnablePcapAll ("goal-topo", false);
 
-  AnimationInterface anim ("trace/goal-topo/goal-topo.xml");
+  AnimationInterface anim ("goal-topo/goal-topo.xml");
   anim.SetConstantPosition(switchNode1,30,0);             // s1-----node 0
   anim.SetConstantPosition(switchNode2,65,0);             // s2-----node 1
   anim.SetConstantPosition(apsNode.Get(0),5,20);      // Ap1----node 2
