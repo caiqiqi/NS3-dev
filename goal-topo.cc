@@ -307,12 +307,12 @@ main (int argc, char *argv[])
   NetDeviceContainer link;
   /* Create the csma links, from each AP && terminals to the switch */
 
-  /* Connect ofSwitch1 to ofSwitch2 */
+  /* #1 Connect ofSwitch1 to ofSwitch2 */
   link = csma.Install(NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
   switch1Device.Add(link.Get(0));
   switch2Device.Add(link.Get(1));
   
-  /* Connect AP1, AP2 and AP3 to ofSwitch1 */  
+  /* #2 Connect AP1, AP2 and AP3 to ofSwitch1 */  
   link = csma.Install(NodeContainer(csmaNodes.Get(0),switchesNode.Get(0)));
   ap1CsmaDevice.Add(link.Get(0));  
   switch1Device.Add(link.Get(1));
@@ -324,7 +324,7 @@ main (int argc, char *argv[])
   switch1Device.Add(link.Get(1));
 
 
-  /* Connect terminal1 and terminal2 to ofSwitch2  */
+  /* #3 Connect terminal1 and terminal2 to ofSwitch2  */
   for (int i = 3; i < 5; i++)
     {
       link = csma.Install(NodeContainer(csmaNodes.Get(i), switchesNode.Get(1)));
@@ -428,15 +428,15 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("----------Enabling OLSR routing && Internet stack----------");
   
   OlsrHelper olsr;
-  Ipv4StaticRoutingHelper ipv4RoutingHelper;
+  Ipv4StaticRoutingHelper staticRoute;
   Ipv4ListRoutingHelper list;
 
   /* list.Add(,0/10); 其中0或者10代表priority
-   这里将 ipv4RoutingHelper 设置优先级 为0;
+   这里将 staticRoute 设置优先级 为0;
    olsr 设置优先级 为10;
   */
 
-  list.Add (ipv4RoutingHelper, 0);
+  list.Add (staticRoute, 0);
   list.Add (olsr, 10);
 
   /* Add internet stack to all the nodes, expect switches(交换机不用) */
@@ -510,12 +510,12 @@ main (int argc, char *argv[])
   Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
 
   /* the intermedia AP3 */
-  //Ptr<Ipv4StaticRouting> staticRoutingAp3 = ipv4RoutingHelper.GetStaticRouting (Ap3Ip);
+  //Ptr<Ipv4StaticRouting> staticRoutingAp3 = staticRoute.GetStaticRouting (Ap3Ip);
   //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
   //staticRoutingAp3->SetDefaultRoute(stasWifi3Interface.GetAddress(0), 1);
 
   /* the server  ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3 */
-  Ptr<Ipv4StaticRouting> h2StaticRouting = ipv4RoutingHelper.GetStaticRouting (h2Ip);
+  Ptr<Ipv4StaticRouting> h2StaticRouting = staticRoute.GetStaticRouting (h2Ip);
   // for node 14
   //h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
   // for node 10
@@ -523,10 +523,10 @@ main (int argc, char *argv[])
   
   /* the client  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3  */
   // for node 14
-  //Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi3Ip); // when node 14
+  //Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = staticRoute.GetStaticRouting (sta1Wifi3Ip); // when node 14
   //sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
   // for node 10
-  Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = ipv4RoutingHelper.GetStaticRouting (sta1Wifi2Ip); // when node 10
+  Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip); // when node 10
   sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
 
 
