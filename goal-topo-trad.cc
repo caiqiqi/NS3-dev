@@ -345,19 +345,6 @@ main (int argc, char *argv[])
   Ptr<Node> switch2Node = switchesNode.Get(1);
 
   
-  NS_LOG_INFO ("----------Installing Bridge NetDevice----------");
-  /*!!!!!!!!!!!! 关键的 BridgeHelper !!!!!!!!!!!*/
-  BridgeHelper bridge1, bridge2;
-  // 下面表示在某Node上安装BridgeNetDevice
-  // This method creates an ns3::BridgeNetDevice, adds the device to the node
-  bridge1. Install(switch1Node, switch1Devices);
-  bridge2. Install(switch2Node, switch2Devices);
-
-  //--------TODO
-  BridgeHelper bridgeForAP1, bridgeForAP2, bridgeForAP3;
-  bridgeForAP1. Install(apsNode.Get (0), NetDeviceContainer(apWifi1Device, ap1CsmaDevice));
-  bridgeForAP2. Install(apsNode.Get (1), NetDeviceContainer(apWifi2Device, ap2CsmaDevice));
-  bridgeForAP3. Install(apsNode.Get (2), NetDeviceContainer(apWifi3Device, ap3CsmaDevice));
 
   NS_LOG_INFO ("----------Configuring WIFI networks----------");
   Ssid ssid1 = Ssid ("ssid-AP1");
@@ -433,17 +420,30 @@ main (int argc, char *argv[])
   mobility2.Install (staWifi3Nodes);
   mobility2.Install (switchesNode);
   
+  NS_LOG_INFO ("----------Installing Bridge NetDevice----------");
+  /*!!!!!!!!!!!! 关键的 BridgeHelper !!!!!!!!!!!*/
+  BridgeHelper bridge1, bridge2;
+  // 下面表示在某Node上安装BridgeNetDevice
+  // This method creates an ns3::BridgeNetDevice, adds the device to the node
+  bridge1. Install(switch1Node, switch1Devices);
+  bridge2. Install(switch2Node, switch2Devices);
+
+  //--------TODO
+  BridgeHelper bridgeForAP1, bridgeForAP2, bridgeForAP3;
+  bridgeForAP1. Install(apsNode.Get (0), NetDeviceContainer(apWifi1Device, ap1CsmaDevice));
+  bridgeForAP2. Install(apsNode.Get (1), NetDeviceContainer(apWifi2Device, ap2CsmaDevice));
+  bridgeForAP3. Install(apsNode.Get (2), NetDeviceContainer(apWifi3Device, ap3CsmaDevice));
 
 
   NS_LOG_INFO ("----------Installing Internet stack----------");
 
-  //OlsrHelper olsr; // 没有olsr，吞吐量就是0，持续丢包！
-  // Ipv4StaticRoutingHelper staticRoute;
-  // Ipv4ListRoutingHelper list;
+  OlsrHelper olsr; // 没有olsr，吞吐量就是0，持续丢包！
+  Ipv4StaticRoutingHelper staticRoute;
+  Ipv4ListRoutingHelper list;
 
   // //---list.Add(,0/10); 其中0或者10代表priority
-  // list.Add (staticRoute, 0);
-  // list.Add (olsr, 10);
+  list.Add (staticRoute, 0);
+  list.Add (olsr, 10);
 
 
   /* Add internet stack to all the nodes, expect switches(交换机不用) */
@@ -452,7 +452,7 @@ main (int argc, char *argv[])
 
   internet.Install (apsNode);
   internet.Install (hostsNode);
-  internet.Install (switchesNode); // 试一下装在交换机上行不行？虽然我看别人的代码都没有。测试知道发现不行，应该是只能装在有IP的Node上
+  internet.Install (switchesNode); // 给交换机撞上Internet之后，交换机有了回环网卡
   internet.Install (staWifi1Nodes);
   internet.Install (staWifi2Nodes);
   internet.Install (staWifi3Nodes);
@@ -461,28 +461,35 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----------Assigning IP Addresses.-----------");
 
   /* AP和 switch 不分配IP, 只把IP给 Host 和 STA */
-  Ipv4AddressHelper ip;
-  ip.SetBase ("192.168.0.0", "255.255.255.0");
+  Ipv4AddressHelper ipCSMA, ipWIFI;
+  ipCSMA.SetBase ("10.0.0.0",    "255.255.255.0");
+  ipWIFI.SetBase ("192.168.0.0", "255.255.255.0");
 
   Ipv4InterfaceContainer h1h2Interface;
   Ipv4InterfaceContainer stasWifi1Interface;
   Ipv4InterfaceContainer stasWifi2Interface;
   Ipv4InterfaceContainer stasWifi3Interface;
 
-  // AP2的地址池， WIFI和CSMA的
-  Ipv4InterfaceContainer apWifi2Interface;
-  Ipv4InterfaceContainer ap2CsmaInterface;
+  // AP 的地址池， WIFI和CSMA的
+  Ipv4InterfaceContainer apWifi1Interface, apWifi2Interface, apWifi3Interface;
+  Ipv4InterfaceContainer ap1CsmaInterface, ap2CsmaInterface, ap3CsmaInterface;
 
-  h1h2Interface      = ip.Assign (hostsDevice);   // 192.168.0.1, 192.168.0.2
-  // 共三个AP, 三个STA的 Interface
-  stasWifi1Interface = ip.Assign (stasWifi1Device); // 192.168.0.3~5
-  stasWifi2Interface = ip.Assign (stasWifi2Device); // 192.168.0.6~9
-  stasWifi3Interface = ip.Assign (stasWifi3Device); // 192.168.0.10
+  /////////// ip for csma /////////////
+  h1h2Interface      = ipCSMA.Assign (hostsDevice);   // 10.0.0.1, 10.0.0.2
+  ap2CsmaInterface   = ipCSMA.Assign (ap2CsmaDevice); // 10.0.0.3
+  
+  // 共三个AP
+                       ipWIFI.Assign (apWifi1Device);
+  apWifi2Interface =   ipWIFI.Assign (apWifi2Device);  // 192.168.0.2
+                       ipWIFI.Assign (apWifi3Device);
+
+  stasWifi1Interface = ipWIFI.Assign (stasWifi1Device); // 192.168.0.4~6
+  stasWifi2Interface = ipWIFI.Assign (stasWifi2Device); // 192.168.0.7~10
+  stasWifi3Interface = ipWIFI.Assign (stasWifi3Device); // 192.168.0.11
 
   //!!!!看到打印出的路由表之后，看来还是要给AP分配IP啊(虽然可以暂时不要interface)，不然都无法路由
   ip.Assign (apWifi1Device);                        // 192.168.0.11
   apWifi2Interface = ip.Assign (apWifi2Device);     // 192.168.0.12
-  ap2CsmaInterface = ip.Assign (ap2CsmaDevice);     // 192.168.0.13
   ip.Assign (apWifi3Device);                        // 192.168.0.14
 
   //Ipv4GlobalRoutingHelper::PopulateRoutingTables();
@@ -491,21 +498,21 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("-----------Enabling Static Routing.-----------");
   /* -----for StaticRouting(its very useful)----- */
 
-  // Ptr<Ipv4> ap2Ip = apsNode.Get(1)->GetObject<Ipv4> ();
-  // Ptr<Ipv4> h2Ip  = hostsNode.Get(1)->GetObject<Ipv4> ();
+  Ptr<Ipv4> ap2Ip = apsNode.Get(1)->GetObject<Ipv4> ();
+  Ptr<Ipv4> h2Ip  = hostsNode.Get(1)->GetObject<Ipv4> ();
 
-  // // for node 10
-  // Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
+  // for node 10
+  Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
 
-  // /* the server  ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP2 */
-  // // for node 10
-  // Ptr<Ipv4StaticRouting> h2StaticRouting = staticRoute.GetStaticRouting (h2Ip);
-  // h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
+  /* the server  ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP2 */
+  // for node 10
+  Ptr<Ipv4StaticRouting> h2StaticRouting = staticRoute.GetStaticRouting (h2Ip);
+  h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
   
-  // /* the client  ---将 WIFI#2 中的 STA1 的默认下一跳为其所在WIFI#2网络的AP2  */
-  // // for node 10
-  // Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip);
-  // sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
+  /* the client  ---将 WIFI#2 中的 STA1 的默认下一跳为其所在WIFI#2网络的AP2  */
+  // for node 10
+  Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip);
+  sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
 
 
   NS_LOG_INFO ("-----------Creating Applications.-----------");
