@@ -257,13 +257,14 @@ main (int argc, char *argv[])
   /* 不管发送功率是多少，都返回一个恒定的接收功率  */
   //wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
+  wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
   wifiPhy.SetChannel (wifiChannel.Create());
-  //wifiPhy.SetPcapDataLinkType (YansWifiPhyHelper::DLT_IEEE802_11_RADIO);
   WifiHelper wifi;
   /* The SetRemoteStationManager method tells the helper the type of `rate control algorithm` to use. 
    * Here, it is asking the helper to use the AARF algorithm
    */
   wifi.SetRemoteStationManager ("ns3::AarfWifiManager");
+  wifi.SetStandard (WIFI_PHY_STANDARD_80211g);
   //wifi.SetStandard (WIFI_PHY_STANDARD_80211n_5GHZ);
   //wifi.SetStandard (WIFI_PHY_STANDARD_80211b);
   WifiMacHelper wifiMac;
@@ -350,6 +351,9 @@ main (int argc, char *argv[])
   /* We want to make sure that our stations don't perform active probing.
    * (就是等AP发现STA，而STA不主动发现AP)
    */
+  // 从wifi-intra-handoff.cc 学的 , 发现STA和AP的wifiPhy如果不是同一个Channel, 他们是无法关联的
+  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (0 % 3) * 5));   // 0
+
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
   stasWifi1Device = wifi.Install(wifiPhy, wifiMac, staWifi1Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid1));
@@ -357,12 +361,18 @@ main (int argc, char *argv[])
 
   //----------------------- Network AP2--------------------
   /* We want to make sure that our stations don't perform active probing. */
+  // 从wifi-intra-handoff.cc 学的
+  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (1 % 3) * 5));    // 1  
+
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
   stasWifi2Device = wifi.Install(wifiPhy, wifiMac, staWifi2Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid2));
   apWifi2Device   = wifi.Install(wifiPhy, wifiMac, ap2WifiNode);
 
   //----------------------- Network AP3--------------------
+  // 从wifi-intra-handoff.cc 学的
+  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (2 % 3) * 5));    //2
+
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
   stasWifi3Device = wifi.Install(wifiPhy, wifiMac, staWifi3Nodes );
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));

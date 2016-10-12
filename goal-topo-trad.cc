@@ -208,7 +208,6 @@ int
 main (int argc, char *argv[])
 {
 
-  #ifdef NS3_OPENFLOW
   Config::SetDefault ("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue (true));
   /* RTS/CTS 一种半双工的握手协议 */
   Config::SetDefault ("ns3::WifiRemoteStationManager::RtsCtsThreshold",UintegerValue (10));
@@ -642,11 +641,6 @@ main (int argc, char *argv[])
   CheckThroughput(&flowmon, monitor, dataset);   // 这句好像是多余的啊，随便，反正只加了一次调用
 
 
-  // monitor->SerializeToXmlFile("trace/goal-topo-trad.flowmon", true, true);
-  /* the SerializeToXmlFile () function 2nd and 3rd parameters 
-   * are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
-   */
-
 
 
   Simulator::Destroy ();
@@ -657,7 +651,4 @@ main (int argc, char *argv[])
   gnuplot.GenerateOutput (outputFileName);
 
   NS_LOG_INFO ("----------Added dataset to outputfile.----------");
-  #else
-  NS_LOG_INFO ("-----NS-3 OpenFlow is Not Enabled. Cannot Run Simulation.-----");
-  #endif // NS3_OPENFLOW
 }
