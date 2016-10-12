@@ -159,7 +159,7 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
     // `192.168.0.10`是client(Node #14)的IP, `192.168.0.2`是server(Node#6)的IP
     // `192.168.0.6` 是client(Node #10)的IP
-    if ((t.sourceAddress=="192.168.0.2" && t.destinationAddress == "192.168.0.6"))
+    if ((t.sourceAddress=="192.168.0.7" && t.destinationAddress == "10.0.0.2"))
       {
           // UDP_PROT_NUMBER = 17
           std::cout << "Flow " << i->first  << "  Protocol  " << unsigned(t.protocol) << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
@@ -487,10 +487,7 @@ main (int argc, char *argv[])
   stasWifi2Interface = ipWIFI.Assign (stasWifi2Device); // 192.168.0.7~10
   stasWifi3Interface = ipWIFI.Assign (stasWifi3Device); // 192.168.0.11
 
-  //!!!!看到打印出的路由表之后，看来还是要给AP分配IP啊(虽然可以暂时不要interface)，不然都无法路由
-  ip.Assign (apWifi1Device);                        // 192.168.0.11
-  apWifi2Interface = ip.Assign (apWifi2Device);     // 192.168.0.12
-  ip.Assign (apWifi3Device);                        // 192.168.0.14
+
 
   //Ipv4GlobalRoutingHelper::PopulateRoutingTables();
 
@@ -523,20 +520,20 @@ main (int argc, char *argv[])
   /* UDP server */
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
   // for node 6
-  ApplicationContainer serverApps = server.Install (staWifi2Nodes.Get(0));
+  ApplicationContainer serverApps = server.Install (hostsNode.Get(1));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(stopTime));  
   
 
   /* UDP client */
-  UdpClientHelper client (stasWifi2Interface.GetAddress(0) ,port);   // h1h2Interface.GetAddress(1)
+  UdpClientHelper client (h1h2Interface.GetAddress(1) ,port);   // stasWifi2Interface.GetAddress(0)
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (1024));
   // for node 14
   //ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
   // for node 10
-  ApplicationContainer clientApps = client.Install(hostsNode.Get(1));
+  ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
   // for node 5
   //ApplicationContainer clientApps = client.Install(hostsNode.Get(0));
   clientApps.Start (Seconds(2));  
