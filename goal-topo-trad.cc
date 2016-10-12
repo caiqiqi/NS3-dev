@@ -347,11 +347,10 @@ main (int argc, char *argv[])
   NS_LOG_INFO ("----------Installing Bridge NetDevice----------");
   /*!!!!!!!!!!!! 关键的 BridgeHelper !!!!!!!!!!!*/
   BridgeHelper bridge1, bridge2;
-  NetDeviceContainer swtichBridge1, swtichBridge2;
   // 下面表示在某Node上安装BridgeNetDevice
   // This method creates an ns3::BridgeNetDevice, adds the device to the node
-  swtichBridge1 = bridge1. Install(switch1Node, switch1Devices);
-  swtichBridge2 = bridge2. Install(switch2Node, switch2Devices);
+  bridge1. Install(switch1Node, switch1Devices);
+  bridge2. Install(switch2Node, switch2Devices);
 
   //--------TODO
   BridgeHelper bridgeForAP1, bridgeForAP2, bridgeForAP3;
@@ -439,7 +438,7 @@ main (int argc, char *argv[])
 
   /* Add internet stack to all the nodes, expect switches(交换机不用) */
   InternetStackHelper internet;
-  //！internet.SetRoutingHelper (olsr); // has effect on the next Install ()
+  //internet.SetRoutingHelper (olsr); // has effect on the next Install ()
 
   internet.Install (apsNode);
   internet.Install (hostsNode);
@@ -572,8 +571,8 @@ main (int argc, char *argv[])
       wifiPhy.EnablePcap ("goal-topo-trad/goal-topo-trad-ap3-wifi", apWifi3Device);
       wifiPhy.EnablePcap ("goal-topo-trad/goal-topo-trad-ap3-sta1-wifi", stasWifi3Device);
       // WifiMacHelper doesnot have `EnablePcap()` method
-      csma.EnablePcap ("goal-topo-trad/goal-topo-trad-switch1-csma", swtichBridge1);
-      csma.EnablePcap ("goal-topo-trad/goal-topo-trad-switch2-csma", swtichBridge2);
+      csma.EnablePcap ("goal-topo-trad/goal-topo-trad-switch1-csma", switch1Devices);
+      csma.EnablePcap ("goal-topo-trad/goal-topo-trad-switch2-csma", switch2Devices);
       csma.EnablePcap ("goal-topo-trad/goal-topo-trad-ap1-csma", ap1CsmaDevice);
       csma.EnablePcap ("goal-topo-trad/goal-topo-trad-ap2-csma", ap2CsmaDevice);
       csma.EnablePcap ("goal-topo-trad/goal-topo-trad-ap3-csma", ap3CsmaDevice);
