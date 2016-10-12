@@ -38,8 +38,11 @@
 //#include "ns3/flow-monitor-helper.h"
 #include "ns3/flow-monitor-module.h"
 #include "ns3/log.h"
+#include "ns3/olsr-helper.h"
 // 给传统交换机(BridgeNetDevice)
 #include "ns3/bridge-module.h"
+
+#include "ns3/global-route-manager.h"
 
 //包含 `gnuplot`和`Gnuplot2Ddatabase`
 #include "ns3/stats-module.h"
@@ -413,10 +416,22 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO ("----------Installing Internet stack----------");
 
+  OlsrHelper olsr; // 没有olsr，吞吐量就是0，持续丢包！
+  Ipv4StaticRoutingHelper staticRoute;
+  Ipv4ListRoutingHelper list;
+
+  //---list.Add(,0/10); 其中0或者10代表priority
+  list.Add (staticRoute, 0);
+  list.Add (olsr, 10);
+
+
   /* Add internet stack to all the nodes, expect switches(交换机不用) */
   InternetStackHelper internet;
+  internet.SetRoutingHelper (olsr); // has effect on the next Install ()
+
   internet.Install (apsNode);
   internet.Install (hostsNode);
+  //internet.Install (switchesNode); // 试一下装在交换机上行不行？虽然我看别人的代码都没有。测试知道发现不行，应该是只能装在有IP的Node上
   internet.Install (staWifi1Nodes);
   internet.Install (staWifi2Nodes);
   internet.Install (staWifi3Nodes);
@@ -443,6 +458,27 @@ main (int argc, char *argv[])
   ip.Assign (apWifi1Device);                        // 192.168.0.11
   ip.Assign (apWifi2Device);                        // 192.168.0.12
   ip.Assign (apWifi3Device);                        // 192.168.0.13
+
+  //Ipv4GlobalRoutingHelper::PopulateRoutingTables();
+
+
+  NS_LOG_INFO ("-----------Enabling Static Routing.-----------");
+  /* -----for StaticRouting(its very useful)----- */
+  Ptr<Ipv4> ap2Ip = apsNode.Get(1)->GetObject<Ipv4> ();
+  Ptr<Ipv4> h2Ip  = hostsNode.Get(1)->GetObject<Ipv4> ();
+
+  // for node 10
+  Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
+
+  /* the server  ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP2 */
+  Ptr<Ipv4StaticRouting> h2StaticRouting = staticRoute.GetStaticRouting (h2Ip);
+  // for node 10
+  h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
+  
+  /* the client  ---将 WIFI#2 中的 STA1 的默认下一跳为其所在WIFI#2网络的AP2  */
+  // for node 10
+  Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip);
+  sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
 
 
 
@@ -495,16 +531,11 @@ main (int argc, char *argv[])
   */
 
 
-  // Trace routing tables 
-  Ipv4GlobalRoutingHelper g;
-  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("goal-topo-trad/routes.txt", std::ios::out);
-  g.PrintRoutingTableAllAt (Seconds (4.0), routingStream);
-
-
 
   /** GlobalRouting does NOT work with Wi-Fi.
    * https://groups.google.com/forum/#!searchin/ns-3-users/wifi$20global$20routing/ns-3-users/Z9K1YrEmbcI/MrP2k47HAQAJ
    */
+
   //Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
 
   NS_LOG_INFO ("-----------Configuring Tracing.-----------");

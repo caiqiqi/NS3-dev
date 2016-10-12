@@ -431,6 +431,11 @@ main (int argc, char *argv[])
   Ipv4StaticRoutingHelper ipv4RoutingHelper;
   Ipv4ListRoutingHelper list;
 
+  /* list.Add(,0/10); 其中0或者10代表priority
+   这里将 ipv4RoutingHelper 设置优先级 为0;
+   olsr 设置优先级 为10;
+  */
+
   list.Add (ipv4RoutingHelper, 0);
   list.Add (olsr, 10);
 
