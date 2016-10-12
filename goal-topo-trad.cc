@@ -438,7 +438,7 @@ main (int argc, char *argv[])
 
   /* Add internet stack to all the nodes, expect switches(交换机不用) */
   InternetStackHelper internet;
-  //internet.SetRoutingHelper (olsr); // has effect on the next Install ()
+  //！internet.SetRoutingHelper (olsr); // has effect on the next Install ()
 
   internet.Install (apsNode);
   internet.Install (hostsNode);
