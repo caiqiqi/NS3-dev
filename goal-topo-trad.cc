@@ -287,12 +287,12 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO ("------------Creating Devices------------");
   /* CSMA Devices */
-  NetDeviceContainer csmaDevices; // 这个是不是多余的，不要行不行？
+  //NetDeviceContainer csmaDevices; // 这个是不是多余的，不要行不行？
   NetDeviceContainer ap1CsmaDevice, ap2CsmaDevice, ap3CsmaDevice;
   NetDeviceContainer hostsDevice;
   NetDeviceContainer switch1Devices, switch2Devices;
 
-  csmaDevices = csma.Install (csmaNodes);  // 这个是不是多余的，不装行不行？
+  //csmaDevices = csma.Install (csmaNodes);  // 这个是不是多余的，不装行不行？
   //hostsDevice.Add (csmaDevices.Get(3));
   //hostsDevice.Add (csmaDevices.Get(4));
   
@@ -442,7 +442,7 @@ main (int argc, char *argv[])
 
   internet.Install (apsNode);
   internet.Install (hostsNode);
-  //internet.Install (switchesNode); // 试一下装在交换机上行不行？虽然我看别人的代码都没有。测试知道发现不行，应该是只能装在有IP的Node上
+  internet.Install (switchesNode); // 试一下装在交换机上行不行？虽然我看别人的代码都没有。测试知道发现不行，应该是只能装在有IP的Node上
   internet.Install (staWifi1Nodes);
   internet.Install (staWifi2Nodes);
   internet.Install (staWifi3Nodes);
