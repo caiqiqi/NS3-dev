@@ -77,13 +77,14 @@ uint32_t nAp3Station = 1;
 
 
 //std::string str_outputFileName = "goal-topo-trad.plt" ;
-std::ofstream outputFileName("trace/goal-topo-trad.plt");  //GenerateOutput()接收的是ofstream类型的 
+std::ofstream outputFileName("goal-topo-trad/goal-topo-trad.plt");  //GenerateOutput()接收的是ofstream类型的 
 double nSamplingPeriod = 0.1;   // 抽样间隔，根据总的Simulation时间做相应的调整
 
 
 /* for udp-server-client application. */
-uint32_t nMaxPackets = 2000;    // The maximum packets to be sent.
+uint32_t nMaxPackets = 20000;    // The maximum packets to be sent.
 double nInterval  = 0.01;  // The interval between two packet sent.
+uint32_t nPacketSize = 1024;
 
 /* for tcp-bulk-send application. */   
 uint32_t nMaxBytes = 0;  //Zero is unlimited.
@@ -110,16 +111,17 @@ CommandSetup (int argc, char **argv)
   //cmd.AddValue ("t", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
   //cmd.AddValue ("timeout", "Learning Controller Timeout (has no effect if drop controller is specified).", MakeCallback ( &SetTimeout));
 
+  cmd.AddValue ("SamplingPeriod", "Sampling period", nSamplingPeriod);
+  cmd.AddValue ("stopTime", "The time to stop", stopTime);
   
   /* for udp-server-client application */
   cmd.AddValue ("MaxPackets", "The total packets available to be scheduled by the UDP application.", nMaxPackets);
   cmd.AddValue ("Interval", "The interval between two packet sent", nInterval);
+  cmd.AddValue ("PacketSize", "The size in byte of each packet", nPacketSize);
 
   /* for tcp-bulk-send application. */
   
   //cmd.AddValue ("MaxBytes", "The amount of data to send in bytes", nMaxBytes);
-  cmd.AddValue ("SamplingPeriod", "Sampling period", nSamplingPeriod);
-  cmd.AddValue ("stopTime", "The time to stop", stopTime);
   
   cmd.Parse (argc, argv);
   return true;
@@ -161,12 +163,16 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
     // `192.168.0.6` 是client(Node #10)的IP
     if ((t.sourceAddress=="192.168.0.7" && t.destinationAddress == "10.0.0.2"))
       {
-          // UDP_PROT_NUMBER = 17
-          std::cout << "Flow " << i->first  << "  Protocol  " << unsigned(t.protocol) << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
+        // UDP_PROT_NUMBER = 17
+        if (17 == unsigned(t.protocol))
+        {
+          std::cout << "Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s\n";
           std::cout << "Lost Packets = " << i->second.lostPackets << "\n";
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
           std::cout << "  Throughput: " <<  localThrou << " Mbps\n";
+          
+        }
       }
      
       // 每迭代一次就把`时间`和`吞吐量`加入到dataset里面
@@ -529,14 +535,14 @@ main (int argc, char *argv[])
   UdpClientHelper client (h1h2Interface.GetAddress(1) ,port);   // stasWifi2Interface.GetAddress(0)
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
-  client.SetAttribute ("PacketSize", UintegerValue (1024));
+  client.SetAttribute ("PacketSize", UintegerValue (nPacketSize));
   // for node 14
   //ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
   // for node 10
   ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
   // for node 5
   //ApplicationContainer clientApps = client.Install(hostsNode.Get(0));
-  clientApps.Start (Seconds(2));  
+  clientApps.Start (Seconds(1.1));  
   clientApps.Stop (Seconds(stopTime));
   
 
