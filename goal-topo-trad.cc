@@ -427,7 +427,7 @@ main (int argc, char *argv[])
 
   NS_LOG_INFO ("----------Installing Internet stack----------");
 
-  OlsrHelper olsr; // 没有olsr，吞吐量就是0，持续丢包！
+  //OlsrHelper olsr; // 没有olsr，吞吐量就是0，持续丢包！
   // Ipv4StaticRoutingHelper staticRoute;
   // Ipv4ListRoutingHelper list;
 
@@ -438,7 +438,7 @@ main (int argc, char *argv[])
 
   /* Add internet stack to all the nodes, expect switches(交换机不用) */
   InternetStackHelper internet;
-  internet.SetRoutingHelper (olsr); // has effect on the next Install ()
+  //internet.SetRoutingHelper (olsr); // has effect on the next Install ()
 
   internet.Install (apsNode);
   internet.Install (hostsNode);
