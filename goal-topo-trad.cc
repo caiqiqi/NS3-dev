@@ -220,9 +220,9 @@ main (int argc, char *argv[])
   dataset.SetStyle (Gnuplot2dDataset::LINES);
 
   /*----- init Helpers ----- */
-  CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
-  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
+  CsmaHelper csma, csma2, csmaSwitch;
+  //csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
+  //csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
   
   /* 调用YansWifiChannelHelper::Default() 已经添加了默认的传播损耗模型, 下面不要再手动添加 */
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
@@ -309,7 +309,7 @@ main (int argc, char *argv[])
 
 
   /* #1 Connect traditional switch1 to traditional switch2 */
-  link = csma.Install (NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
+  link = csmaSwitch.Install (NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
   switch1Devices. Add(link.Get(0));
   switch2Devices. Add(link.Get(1));
   
@@ -336,7 +336,7 @@ main (int argc, char *argv[])
   /* #3 Connect host1 and host2 to traditonal switch2  */
   for (uint32_t i = 0; i < nHost; i++)
   {
-    link = csma.Install (NodeContainer(hostsNode.Get(i), switchesNode.Get(1)));   // Get(1) for switch2
+    link = csma2.Install (NodeContainer(hostsNode.Get(i), switchesNode.Get(1)));   // Get(1) for switch2
     hostsDevice. Add(link.Get(0));
     switch2Devices. Add(link.Get(1));
   }
