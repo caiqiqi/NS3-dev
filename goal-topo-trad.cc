@@ -532,7 +532,7 @@ main (int argc, char *argv[])
   ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
   // for node 5
   //ApplicationContainer clientApps = client.Install(hostsNode.Get(0));
-  clientApps.Start (Seconds(1.1));  
+  clientApps.Start (Seconds(2));  
   clientApps.Stop (Seconds(stopTime));
   
 
