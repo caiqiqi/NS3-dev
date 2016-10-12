@@ -278,21 +278,21 @@ main (int argc, char *argv[])
   
 
   /* 这里用一个`csmaNodes`来包括 `apsNode` 和 `hostsNode` */
-  //NodeContainer csmaNodes;
-  //csmaNodes.Add(apsNode);     // APs index : 0,1,2
-  //csmaNodes.Add(hostsNode);   // terminals index: 3,4 
+  NodeContainer csmaNodes;
+  csmaNodes.Add(apsNode);     // APs index : 0,1,2
+  csmaNodes.Add(hostsNode);   // terminals index: 3,4 
   
   
   
 
   NS_LOG_INFO ("------------Creating Devices------------");
   /* CSMA Devices */
-  //NetDeviceContainer csmaDevices; // 这个是不是多余的，不要行不行？
+  NetDeviceContainer csmaDevices; // 这个是不是多余的，不要行不行？
   NetDeviceContainer ap1CsmaDevice, ap2CsmaDevice, ap3CsmaDevice;
   NetDeviceContainer hostsDevice;
   NetDeviceContainer switch1Devices, switch2Devices;
 
-  // csmaDevices = csma.Install (csmaNodes);  // 这个是不是多余的，不装行不行？
+  csmaDevices = csma.Install (csmaNodes);  // 这个是不是多余的，不装行不行？
   //hostsDevice.Add (csmaDevices.Get(3));
   //hostsDevice.Add (csmaDevices.Get(4));
   
