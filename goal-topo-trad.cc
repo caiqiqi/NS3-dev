@@ -159,7 +159,7 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
     // `192.168.0.10`是client(Node #14)的IP, `192.168.0.2`是server(Node#6)的IP
     // `192.168.0.6` 是client(Node #10)的IP
-    if ((t.sourceAddress=="192.168.0.6" && t.destinationAddress == "192.168.0.2"))
+    if ((t.sourceAddress=="192.168.0.2" && t.destinationAddress == "192.168.0.6"))
       {
           // UDP_PROT_NUMBER = 17
           std::cout << "Flow " << i->first  << "  Protocol  " << unsigned(t.protocol) << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
@@ -516,20 +516,20 @@ main (int argc, char *argv[])
   /* UDP server */
   UdpServerHelper server (port);  // for the server side, only one param(port) is specified
   // for node 6
-  ApplicationContainer serverApps = server.Install (hostsNode.Get(1));
+  ApplicationContainer serverApps = server.Install (staWifi2Nodes.Get(0));
   serverApps.Start (Seconds(1.0));  
   serverApps.Stop (Seconds(stopTime));  
   
 
   /* UDP client */
-  UdpClientHelper client (h1h2Interface.GetAddress(1) ,port);
+  UdpClientHelper client (stasWifi2Interface.GetAddress(0) ,port);   // h1h2Interface.GetAddress(1)
   client.SetAttribute ("MaxPackets", UintegerValue (nMaxPackets));
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (1024));
   // for node 14
   //ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
   // for node 10
-  ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
+  ApplicationContainer clientApps = client.Install(hostsNode.Get(1));
   // for node 5
   //ApplicationContainer clientApps = client.Install(hostsNode.Get(0));
   clientApps.Start (Seconds(2));  
