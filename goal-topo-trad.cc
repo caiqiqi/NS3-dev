@@ -66,7 +66,7 @@ bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
 
-double stopTime = 20.0;  // when the simulation stops
+double stopTime = 50.0;  // when the simulation stops
 
 uint32_t nAp         = 3;
 uint32_t nSwitch     = 2;
@@ -167,9 +167,9 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
 
     /* 每个flow是根据包的五元组(协议，源IP/端口，目的IP/端口)来区分的 */
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-    // `192.168.0.10`是client(Node #14)的IP, `192.168.0.2`是server(Node#6)的IP
-    // `192.168.0.6` 是client(Node #10)的IP
-    if ((t.sourceAddress=="192.168.0.7" && t.destinationAddress == "10.0.0.2"))
+    // `192.168.0.11`是client(Node #14)的IP,
+    // `192.168.0.7` 是client(Node #10)的IP
+    if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
       {
         // UDP_PROT_NUMBER = 17
         if (17 == unsigned(t.protocol))
@@ -484,7 +484,7 @@ main (int argc, char *argv[])
   
   NS_LOG_INFO ("-----------Assigning IP Addresses.-----------");
 
-  /* AP和 switch 不分配IP, 只把IP给 Host 和 STA */
+
   Ipv4AddressHelper ipCSMA, ipWIFI;
   ipCSMA.SetBase ("10.0.0.0",    "255.255.255.0");
   ipWIFI.SetBase ("192.168.0.0", "255.255.255.0");
@@ -499,14 +499,18 @@ main (int argc, char *argv[])
   Ipv4InterfaceContainer ap1CsmaInterface, ap2CsmaInterface, ap3CsmaInterface;
 
   /////////// ip for csma /////////////
-  h1h2Interface      = ipCSMA.Assign (hostsDevice);   // 10.0.0.1, 10.0.0.2
-  ap2CsmaInterface   = ipCSMA.Assign (ap2CsmaDevice); // 10.0.0.3
-  
-  // 共三个AP
-                       ipWIFI.Assign (apWifi1Device);
-  apWifi2Interface =   ipWIFI.Assign (apWifi2Device);  // 192.168.0.2
-                       ipWIFI.Assign (apWifi3Device);
+  ap1CsmaInterface   = ipCSMA.Assign (ap1CsmaDevice); // 10.0.0.1 
+  ap2CsmaInterface   = ipCSMA.Assign (ap2CsmaDevice); // 10.0.0.2
+  ap3CsmaInterface   = ipCSMA.Assign (ap3CsmaDevice); // 10.0.0.3
 
+  h1h2Interface      = ipCSMA.Assign (hostsDevice);   // 10.0.0.4~5
+
+  // 共三个AP
+  apWifi1Interface =   ipWIFI.Assign (apWifi1Device);  // 192.168.0.1
+  apWifi2Interface =   ipWIFI.Assign (apWifi2Device);  // 192.168.0.2
+  apWifi3Interface =   ipWIFI.Assign (apWifi3Device);  // 192.168.0.3
+
+  // 供三组STA
   stasWifi1Interface = ipWIFI.Assign (stasWifi1Device); // 192.168.0.4~6
   stasWifi2Interface = ipWIFI.Assign (stasWifi2Device); // 192.168.0.7~10
   stasWifi3Interface = ipWIFI.Assign (stasWifi3Device); // 192.168.0.11

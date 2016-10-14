@@ -67,7 +67,7 @@ bool tracing  = true;
 ns3::Time timeout = ns3::Seconds (0);
 
 
-double stopTime = 20.0;  // when the simulation stops
+double stopTime = 50.0;  // when the simulation stops
 
 uint32_t nAp         = 3;
 uint32_t nSwitch     = 2;
@@ -169,10 +169,9 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
 
     /* 每个flow是根据包的五元组(协议，源IP/端口，目的IP/端口)来区分的 */
     Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
-    // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
-    // `10.0.2.2`是 Node#10  的IP
-    // `10.0.1.2`是 Node#7   的IP
-    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.5"))
+    // `192.168.0.11`是client(Node #14)的IP,
+    // `192.168.0.7` 是client(Node #10)的IP
+    if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
       {
           // UDP_PROT_NUMBER = 17
           if (17 == unsigned(t.protocol))
@@ -494,39 +493,35 @@ main (int argc, char *argv[])
   
   NS_LOG_INFO ("-----------Assigning IP Addresses.-----------");
 
-  /* for CSMA */
-  Ipv4AddressHelper csmaIpAddress;
-  csmaIpAddress.SetBase ("192.168.0.0", "255.255.255.0");
-  Ipv4InterfaceContainer ap1CsmaInterface;
-  Ipv4InterfaceContainer ap2CsmaInterface;
-  Ipv4InterfaceContainer ap3CsmaInterface;
+  Ipv4AddressHelper ipCSMA, ipWIFI;
+  ipCSMA.SetBase ("10.0.0.0",    "255.255.255.0");
+  ipWIFI.SetBase ("192.168.0.0", "255.255.255.0");
+
   Ipv4InterfaceContainer h1h2Interface;
+  Ipv4InterfaceContainer stasWifi1Interface;
+  Ipv4InterfaceContainer stasWifi2Interface;
+  Ipv4InterfaceContainer stasWifi3Interface;
 
-  ap1CsmaInterface = csmaIpAddress.Assign (ap1CsmaDevice);
-  ap2CsmaInterface = csmaIpAddress.Assign (ap2CsmaDevice); 
-  ap3CsmaInterface = csmaIpAddress.Assign (ap3CsmaDevice);
-  h1h2Interface    = csmaIpAddress.Assign (hostsDevice); 
+  // AP 的地址池， WIFI和CSMA的
+  Ipv4InterfaceContainer apWifi1Interface, apWifi2Interface, apWifi3Interface;
+  Ipv4InterfaceContainer ap1CsmaInterface, ap2CsmaInterface, ap3CsmaInterface;
 
+  /////////// ip for csma /////////////
+  ap1CsmaInterface   = ipCSMA.Assign (ap1CsmaDevice); // 10.0.0.1 
+  ap2CsmaInterface   = ipCSMA.Assign (ap2CsmaDevice); // 10.0.0.2
+  ap3CsmaInterface   = ipCSMA.Assign (ap3CsmaDevice); // 10.0.0.3
 
-  /* for WIFI */
-  Ipv4AddressHelper wifi1Address, wifi2Address, wifi3Address;
-  wifi1Address.SetBase ("10.0.1.0", "255.255.255.0");
-  wifi2Address.SetBase ("10.0.2.0", "255.255.255.0");
-  wifi3Address.SetBase ("10.0.3.0", "255.255.255.0");
-  
-  Ipv4InterfaceContainer apWifi1Interface, stasWifi1Interface;
-  Ipv4InterfaceContainer apWifi2Interface, stasWifi2Interface;
-  Ipv4InterfaceContainer apWifi3Interface, stasWifi3Interface;
+  h1h2Interface      = ipCSMA.Assign (hostsDevice);   // 10.0.0.4~5
 
-  
-  apWifi1Interface = wifi1Address.Assign (apWifi1Device);
-  stasWifi1Interface = wifi1Address.Assign (stasWifi1Device);
+  // 共三个AP
+  apWifi1Interface =   ipWIFI.Assign (apWifi1Device);  // 192.168.0.1
+  apWifi2Interface =   ipWIFI.Assign (apWifi2Device);  // 192.168.0.2
+  apWifi3Interface =   ipWIFI.Assign (apWifi3Device);  // 192.168.0.3
 
-  apWifi2Interface = wifi2Address.Assign (apWifi2Device);
-  stasWifi2Interface = wifi2Address.Assign (stasWifi2Device);
-
-  apWifi3Interface  = wifi3Address.Assign (apWifi3Device);
-  stasWifi3Interface = wifi3Address.Assign (stasWifi3Device);
+  // 供三组STA
+  stasWifi1Interface = ipWIFI.Assign (stasWifi1Device); // 192.168.0.4~6
+  stasWifi2Interface = ipWIFI.Assign (stasWifi2Device); // 192.168.0.7~10
+  stasWifi3Interface = ipWIFI.Assign (stasWifi3Device); // 192.168.0.11
 
 
 
@@ -561,16 +556,16 @@ main (int argc, char *argv[])
 
   /* --- the server  --- */
   Ptr<Ipv4StaticRouting> h2StaticRouting = staticRoute.GetStaticRouting (h2Ip);
-  // for node 14 ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3
+  // for node 14 ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3----CSMA网卡IP
   h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
-  // for node 10 ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP2
+  // for node 10 ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP2----CSMA网卡IP
   //h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
   
   /* --- the client  --- */
-  // for node 14  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3
+  // for node 14  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3----WIFI网卡IP
   Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = staticRoute.GetStaticRouting (sta1Wifi3Ip); // when node 14
   sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
-  // for node 10  ---将 WIFI#2 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP2
+  // for node 10  ---将 WIFI#2 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP2----WIFI网卡IP
   //Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip); // when node 10
   //sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
 
