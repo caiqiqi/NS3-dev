@@ -54,7 +54,7 @@
 #include <stdint.h>
 #include <sstream>
 #include <fstream>
-
+#include <vector>
 
 
 using namespace ns3;
@@ -179,7 +179,10 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
           std::cout << "Lost Packets = " << i->second.lostPackets << "\n";
           localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024 ;
           std::cout << "  Throughput: " <<  localThrou << " Kbps\n";
-          
+        }
+        else
+        {
+          std::cout << "This is not UDP traffic" << std::endl;
         }
       }
      
@@ -564,9 +567,9 @@ main (int argc, char *argv[])
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (nPacketSize));
   // for node 14
-  //ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
+  ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
   // for node 10
-  ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
+  //ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
   // for node 5
   //ApplicationContainer clientApps = client.Install(hostsNode.Get(0));
   clientApps.Start (Seconds(1.1));  

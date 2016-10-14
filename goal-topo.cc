@@ -239,8 +239,8 @@ main (int argc, char *argv[])
 
   /*----- init Helpers ----- */
   CsmaHelper csma;
-  csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
-  csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
+  //csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
+  //csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
   
   /* 调用YansWifiChannelHelper::Default() 已经添加了默认的传播损耗模型, 下面不要再手动添加 
   By default, we create a channel model with a propagation delay equal to a constant, 
