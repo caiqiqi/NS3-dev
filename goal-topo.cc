@@ -90,6 +90,12 @@ uint32_t nMaxBytes = 0;  //Zero is unlimited.
 
 
 
+/* 恒定速度移动节点的初始位置和移动速度*/
+//TODO
+Vector mPosition = Vector(55.0, 25.0);
+Vector mVelocity = Vector(5.0 , 0.0);
+
+
 bool
 SetTimeout (std::string value)
 {
@@ -161,7 +167,7 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
     // `10.0.3.2`是client(Node#14)的IP, `192.168.0.8`是server(Node#6)的IP
     // `10.0.2.2`是 Node#10  的IP
     // `10.0.1.2`是 Node#7   的IP
-    if ((t.sourceAddress=="10.0.2.2" && t.destinationAddress == "192.168.0.5"))
+    if ((t.sourceAddress=="10.0.3.2" && t.destinationAddress == "192.168.0.5"))
       {
           // UDP_PROT_NUMBER = 17
           if (17 == unsigned(t.protocol))
@@ -376,9 +382,9 @@ main (int argc, char *argv[])
   wifiMac.SetType ("ns3::ApWifiMac", "Ssid", SsidValue (ssid3));
   apWifi3Device   = wifi.Install(wifiPhy, wifiMac, ap3WifiNode);
 
-  MobilityHelper mobility;
+  MobilityHelper mobility1;
   /* for staWifi--1--Nodes */
-  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+  mobility1.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (0),
     "MinY",      DoubleValue (30),
     "DeltaX",    DoubleValue (5),
@@ -386,12 +392,12 @@ main (int argc, char *argv[])
     "GridWidth", UintegerValue(3),
     "LayoutType",StringValue ("RowFirst")
     );    // "GridWidth", UintegerValue(3),
-  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
+  mobility1.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
     "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
-  mobility.Install (staWifi1Nodes);
+  mobility1.Install (staWifi1Nodes);
 
   /* for staWifi--2--Nodes */
-  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+  mobility2.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (25),
     "MinY",      DoubleValue (30),
     "DeltaX",    DoubleValue (10),
@@ -399,9 +405,17 @@ main (int argc, char *argv[])
     "GridWidth", UintegerValue(2),
     "LayoutType",StringValue ("RowFirst")
     );    // "GridWidth", UintegerValue(3),
-  mobility.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
+  mobility2.SetMobilityModel ("ns3::RandomWalk2dMobilityModel", 
     "Bounds", RectangleValue (Rectangle (-50, 50, -50, 50)));
-  mobility.Install (staWifi2Nodes);
+  mobility2.Install (staWifi2Nodes);
+
+
+
+  /* for sta-1-Wifi-2-Node 要让Wifi2网络中的Sta1以恒定速度移动  */
+  MobilityHelper mobConstantSpeed;
+  mobConstantSpeed.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
+  mobConstantSpeed.SetPosition(mPosition);
+  mobConstantSpeed.SetVelocity(mVelocity);
   
 
   /* for ConstantPosition Nodes */
@@ -531,20 +545,21 @@ main (int argc, char *argv[])
   //staticRoutingAp3->SetDefaultRoute(h1h2Interface.GetAddress(1), 1);
   //staticRoutingAp3->SetDefaultRoute(stasWifi3Interface.GetAddress(0), 1);
 
-  /* the server  ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3 */
+  /* --- the server  --- */
   Ptr<Ipv4StaticRouting> h2StaticRouting = staticRoute.GetStaticRouting (h2Ip);
-  // for node 14
-  //h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
-  // for node 10
-  h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
+  // for node 14 ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP3
+  h2StaticRouting->SetDefaultRoute(ap3CsmaInterface.GetAddress(0), 1);
+  // for node 10 ---将 CSMA网络中的 H2 的默认下一跳为CSMA网络中的AP2
+  //h2StaticRouting->SetDefaultRoute(ap2CsmaInterface.GetAddress(0), 1);
   
-  /* the client  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3  */
-  // for node 14
-  //Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = staticRoute.GetStaticRouting (sta1Wifi3Ip); // when node 14
-  //sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
-  // for node 10
-  Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip); // when node 10
-  sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
+  /* --- the client  --- */
+  // for node 14  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3
+  Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = staticRoute.GetStaticRouting (sta1Wifi3Ip); // when node 14
+  sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
+  
+  // for node 10  ---将 WIFI#2 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP2
+  //Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip); // when node 10
+  //sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
 
 
   NS_LOG_INFO ("-----------Creating Applications.-----------");
@@ -566,9 +581,9 @@ main (int argc, char *argv[])
   client.SetAttribute ("Interval", TimeValue (Seconds(nInterval)));  
   client.SetAttribute ("PacketSize", UintegerValue (nPacketSize));
   // for node 14
-  //ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
+  ApplicationContainer clientApps = client.Install(staWifi3Nodes.Get(0));
   // for node 10
-  ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
+  //ApplicationContainer clientApps = client.Install(staWifi2Nodes.Get(0));
   // for node 5
   //ApplicationContainer clientApps = client.Install(hostsNode.Get(0));
   clientApps.Start (Seconds(1.1));  
@@ -646,7 +661,7 @@ main (int argc, char *argv[])
   anim.SetConstantPosition(apsNode.Get(2),55,20);      // Ap3----node 4
   anim.SetConstantPosition(hostsNode.Get(0),65,20);    // H1-----node 5
   anim.SetConstantPosition(hostsNode.Get(1),75,20);    // H2-----node 6
-  anim.SetConstantPosition(staWifi3Nodes.Get(0),55,40);  //   -----node 14
+  //anim.SetConstantPosition(staWifi3Nodes.Get(0),55,40);  //   -----node 14
 
   anim.EnablePacketMetadata();   // to see the details of each packet
 
