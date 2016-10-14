@@ -37,6 +37,7 @@
 #include "ns3/internet-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/mobility-module.h"
+//#include "ns3/constant-velocity-helper.h"
 #include "ns3/ipv4-global-routing-helper.h"
 #include "ns3/applications-module.h"
 //#include "ns3/flow-monitor-helper.h"
@@ -53,6 +54,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 
 
@@ -90,10 +92,13 @@ uint32_t nMaxBytes = 0;  //Zero is unlimited.
 
 
 
-/* 恒定速度移动节点的初始位置和移动速度*/
-//TODO
-Vector mPosition = Vector(55.0, 25.0);
-Vector mVelocity = Vector(5.0 , 0.0);
+/* 恒定速度移动节点的
+初始位置 x = 55.0, y = 25.0
+和
+移动速度 x = 5.0,  y=  0.0
+*/
+Vector3D mPosition = Vector3D(0.0, 25.0, 0.0);
+Vector3D mVelocity = Vector3D(5.0, 0.0 , 0.0);
 
 
 bool
@@ -397,6 +402,7 @@ main (int argc, char *argv[])
   mobility1.Install (staWifi1Nodes);
 
   /* for staWifi--2--Nodes */
+  MobilityHelper mobility2;
   mobility2.SetPositionAllocator ("ns3::GridPositionAllocator",
     "MinX",      DoubleValue (25),
     "MinY",      DoubleValue (30),
@@ -411,22 +417,25 @@ main (int argc, char *argv[])
 
 
 
-  /* for sta-1-Wifi-2-Node 要让Wifi2网络中的Sta1以恒定速度移动  */
+  /* for sta-1-Wifi-3-Node 要让Wifi3网络中的Sta1以恒定速度移动  */
   MobilityHelper mobConstantSpeed;
   mobConstantSpeed.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
-  mobConstantSpeed.SetPosition(mPosition);
-  mobConstantSpeed.SetVelocity(mVelocity);
+  mobConstantSpeed.Install (staWifi3Nodes.Get(0));  // Wifi-3中的第一个节点(即Node14)安装
   
+  Ptr <ConstantVelocityMobilityModel> velocityModel = staWifi3Nodes.Get(0)->GetObject<ConstantVelocityMobilityModel>();
+  velocityModel->SetPosition(mPosition);
+  velocityModel->SetVelocity(mVelocity);
+
 
   /* for ConstantPosition Nodes */
-  MobilityHelper mobility2;
+  MobilityHelper mobConstantPosition;
   /* We want the AP to remain in a fixed position during the simulation 
    * only stations in AP1 and AP2 is mobile, the only station in AP3 is not mobile.
    */
-  mobility2.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility2.Install (csmaNodes);    // csmaNodes includes APs and terminals
-  mobility2.Install (staWifi3Nodes);
-  mobility2.Install (switchesNode);
+  mobConstantPosition.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobConstantPosition.Install (csmaNodes);    // csmaNodes includes APs and terminals
+  //mobConstantPosition.Install (staWifi3Nodes);
+  mobConstantPosition.Install (switchesNode);
 
   /* Create the switch netdevice,which will do the packet switching */
   Ptr<Node> switchNode1 = switchesNode.Get (0);
@@ -533,12 +542,13 @@ main (int argc, char *argv[])
    */
 
   /* -----for StaticRouting(its very useful)----- */
-  Ptr<Ipv4> ap3Ip = apsNode.Get(2)->GetObject<Ipv4> ();
   Ptr<Ipv4> h2Ip = hostsNode.Get(1)->GetObject<Ipv4> ();    // or csmaNodes.Get(4)
   // for node 14
-  //Ptr<Ipv4> sta1Wifi3Ip = staWifi3Nodes.Get(0)->GetObject<Ipv4> ();
+  Ptr<Ipv4> ap3Ip = apsNode.Get(2)->GetObject<Ipv4> ();
+  Ptr<Ipv4> sta1Wifi3Ip = staWifi3Nodes.Get(0)->GetObject<Ipv4> ();
   // for node 10
-  Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
+  //Ptr<Ipv4> ap2Ip = apsNode.Get(1)->GetObject<Ipv4> ();
+  //Ptr<Ipv4> sta1Wifi2Ip = staWifi2Nodes.Get(0)->GetObject<Ipv4> ();
 
   /* the intermedia AP3 */
   //Ptr<Ipv4StaticRouting> staticRoutingAp3 = staticRoute.GetStaticRouting (Ap3Ip);
@@ -556,7 +566,6 @@ main (int argc, char *argv[])
   // for node 14  ---将 WIFI#3 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP3
   Ptr<Ipv4StaticRouting> sta1Wifi3StaticRouting = staticRoute.GetStaticRouting (sta1Wifi3Ip); // when node 14
   sta1Wifi3StaticRouting->SetDefaultRoute(apWifi3Interface.GetAddress(0), 1);
-  
   // for node 10  ---将 WIFI#2 中的 STA1 的默认下一跳为其所在WIFI#3网络的AP2
   //Ptr<Ipv4StaticRouting> sta1Wifi2StaticRouting = staticRoute.GetStaticRouting (sta1Wifi2Ip); // when node 10
   //sta1Wifi2StaticRouting->SetDefaultRoute(apWifi2Interface.GetAddress(0), 1);
