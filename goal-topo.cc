@@ -93,12 +93,12 @@ uint32_t nMaxBytes = 0;  //Zero is unlimited.
 
 
 /* 恒定速度移动节点的
-初始位置 x = 55.0, y = 25.0
+初始位置 x = 0.0, y = 25.0
 和
-移动速度 x = 5.0,  y=  0.0
+移动速度 x = 1.0,  y=  0.0
 */
 Vector3D mPosition = Vector3D(0.0, 25.0, 0.0);
-Vector3D mVelocity = Vector3D(5.0, 0.0 , 0.0);
+Vector3D mVelocity = Vector3D(1.0, 0.0 , 0.0);
 
 
 bool
@@ -361,7 +361,7 @@ main (int argc, char *argv[])
    * (就是等AP发现STA，而STA不主动发现AP)
    */
   // 从wifi-intra-handoff.cc 学的 , 发现STA和AP的wifiPhy如果不是同一个Channel, 他们是无法关联的
-  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (0 % 3) * 5));   // 0
+  //wifiPhy.Set("ChannelNumber", UintegerValue(1 + (0 % 3) * 5));   // 0
 
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (false));
   stasWifi1Device = wifi.Install(wifiPhy, wifiMac, staWifi1Nodes );
@@ -371,7 +371,7 @@ main (int argc, char *argv[])
   //----------------------- Network AP2--------------------
   /* We want to make sure that our stations don't perform active probing. */
   // 从wifi-intra-handoff.cc 学的
-  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (1 % 3) * 5));    // 1  
+  //wifiPhy.Set("ChannelNumber", UintegerValue(1 + (1 % 3) * 5));    // 1  
 
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (false));
   stasWifi2Device = wifi.Install(wifiPhy, wifiMac, staWifi2Nodes );
@@ -380,7 +380,7 @@ main (int argc, char *argv[])
 
   //----------------------- Network AP3--------------------
   // 从wifi-intra-handoff.cc 学的
-  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (2 % 3) * 5));    //2
+  //wifiPhy.Set("ChannelNumber", UintegerValue(1 + (2 % 3) * 5));    //2
 
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (false));
   stasWifi3Device = wifi.Install(wifiPhy, wifiMac, staWifi3Nodes );

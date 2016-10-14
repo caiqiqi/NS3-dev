@@ -358,7 +358,7 @@ main (int argc, char *argv[])
    * (就是等AP发现STA，而STA不主动发现AP)
    */
   // 从wifi-intra-handoff.cc 学的 , 发现STA和AP的wifiPhy如果不是同一个Channel, 他们是无法关联的
-  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (0 % 3) * 5));   // 0
+  //wifiPhy.Set("ChannelNumber", UintegerValue(1 + (0 % 3) * 5));   // 0
 
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid1), "ActiveProbing", BooleanValue (true));
   stasWifi1Device = wifi.Install(wifiPhy, wifiMac, staWifi1Nodes );
@@ -368,7 +368,7 @@ main (int argc, char *argv[])
   //----------------------- Network AP2--------------------
   /* We want to make sure that our stations don't perform active probing. */
   // 从wifi-intra-handoff.cc 学的
-  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (1 % 3) * 5));    // 1  
+  //wifiPhy.Set("ChannelNumber", UintegerValue(1 + (1 % 3) * 5));    // 1  
 
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid2), "ActiveProbing", BooleanValue (true));
   stasWifi2Device = wifi.Install(wifiPhy, wifiMac, staWifi2Nodes );
@@ -377,7 +377,7 @@ main (int argc, char *argv[])
 
   //----------------------- Network AP3--------------------
   // 从wifi-intra-handoff.cc 学的
-  wifiPhy.Set("ChannelNumber", UintegerValue(1 + (2 % 3) * 5));    //2
+  //wifiPhy.Set("ChannelNumber", UintegerValue(1 + (2 % 3) * 5));    //2
 
   wifiMac.SetType ("ns3::StaWifiMac", "Ssid", SsidValue (ssid3), "ActiveProbing", BooleanValue (true));
   stasWifi3Device = wifi.Install(wifiPhy, wifiMac, staWifi3Nodes );
