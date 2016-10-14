@@ -262,7 +262,7 @@ main (int argc, char *argv[])
   wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   /* 很多地方都用这个，不知道什么意思  */
   // wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");  // !!! 加了这句之后AP和STA就无法连接了
-  //wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
+  wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
   /* 不管发送功率是多少，都返回一个恒定的接收功率  */
   //wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
