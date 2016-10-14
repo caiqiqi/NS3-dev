@@ -237,7 +237,7 @@ main (int argc, char *argv[])
   Gnuplot2dDataset dataset;
 
   /*----- init Helpers ----- */
-  CsmaHelper csma;
+  CsmaHelper csma, csma2, csmaSwitch;
   //csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
   //csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
   
@@ -330,7 +330,7 @@ main (int argc, char *argv[])
   /* Create the csma links, from each AP && terminals to the switch */
 
   /* #1 Connect ofSwitch1 to ofSwitch2 */
-  link = csma.Install(NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
+  link = csmaSwitch.Install(NodeContainer(switchesNode.Get(0),switchesNode.Get(1)));  
   switch1Device.Add(link.Get(0));
   switch2Device.Add(link.Get(1));
   
@@ -349,7 +349,7 @@ main (int argc, char *argv[])
   /* #3 Connect terminal1 and terminal2 to ofSwitch2  */
   for (int i = 3; i < 5; i++)
     {
-      link = csma.Install(NodeContainer(csmaNodes.Get(i), switchesNode.Get(1)));
+      link = csma2.Install(NodeContainer(csmaNodes.Get(i), switchesNode.Get(1)));
       hostsDevice.Add(link.Get(0));
       switch2Device.Add(link.Get(1));
 
