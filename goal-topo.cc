@@ -242,7 +242,11 @@ main (int argc, char *argv[])
   csma.SetChannelAttribute ("DataRate", DataRateValue (100000000));   // 100M bandwidth
   csma.SetChannelAttribute ("Delay", TimeValue (MilliSeconds (2)));   // 2ms delay
   
-  /* 调用YansWifiChannelHelper::Default() 已经添加了默认的传播损耗模型, 下面不要再手动添加 */
+  /* 调用YansWifiChannelHelper::Default() 已经添加了默认的传播损耗模型, 下面不要再手动添加 
+  By default, we create a channel model with a propagation delay equal to a constant, 
+  the speed of light, and a propagation loss based on a log distance model 
+  with a reference loss of 46.6777 dB at reference distance of 1m. 
+  */
   YansWifiChannelHelper wifiChannel = YansWifiChannelHelper::Default();
   ////////////////////////////////////////
   ////////////// LOSS MODEL //////////////
@@ -259,10 +263,10 @@ main (int argc, char *argv[])
    *
    */
   /* 传播延时速度是恒定的  */
-  wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
+  //wifiChannel.SetPropagationDelay ("ns3::ConstantSpeedPropagationDelayModel");
   /* 很多地方都用这个，不知道什么意思  */
   // wifiChannel.AddPropagationLoss ("ns3::FriisPropagationLossModel");  // !!! 加了这句之后AP和STA就无法连接了
-  wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
+  //wifiChannel.AddPropagationLoss ("ns3::LogDistancePropagationLossModel");
   /* 不管发送功率是多少，都返回一个恒定的接收功率  */
   //wifiChannel.AddPropagationLoss ("ns3::FixedRssLossModel","Rss",DoubleValue (rss));
   YansWifiPhyHelper wifiPhy = YansWifiPhyHelper::Default();
