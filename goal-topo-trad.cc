@@ -169,8 +169,8 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
           std::cout << "Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
           std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s\n";
           std::cout << "Lost Packets = " << i->second.lostPackets << "\n";
-          localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024/1024 ;
-          std::cout << "  Throughput: " <<  localThrou << " Mbps\n";
+          localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024 ;
+          std::cout << "  Throughput: " <<  localThrou << " Kbps\n";
           
         }
       }
@@ -221,8 +221,6 @@ main (int argc, char *argv[])
   /*------- for gnuplot ------*/
   Gnuplot gnuplot;
   Gnuplot2dDataset dataset;
-  //dataset->SetTitle ("Throughput VS Time");   // 这句好像不起什么作用
-  dataset.SetStyle (Gnuplot2dDataset::LINES);
 
   /*----- init Helpers ----- */
   CsmaHelper csma, csma2, csmaSwitch;
