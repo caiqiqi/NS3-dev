@@ -227,9 +227,6 @@ main (int argc, char *argv[])
   CommandSetup (argc, argv) ;
   
 
-  /*------- for gnuplot ------*/
-  Gnuplot gnuplot;
-  Gnuplot2dDataset dataset;
 
   /*----- init Helpers ----- */
   CsmaHelper csma, csma2, csmaSwitch;
