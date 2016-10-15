@@ -55,7 +55,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <string>
 
 
 
@@ -182,12 +181,12 @@ CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
           // UDP_PROT_NUMBER = 17
           if (17 == unsigned(t.protocol))
           {
-            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << stats->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
+            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
             
-            throu   = stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024 ;
-            delay   = stats->second.delaySum.GetSeconds ();
-            packets = stats->second.lostPackets;
-            jitter  = stats->second.jitterSum.GetSeconds ();
+            throu   = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024 ;
+            delay   = i->second.delaySum.GetSeconds ();
+            packets = i->second.lostPackets;
+            jitter  = i->second.jitterSum.GetSeconds ();
 
             std::cout << "  Throughput: "  <<  throu << " Kbps" << std::endl;
             std::cout << "  Delay: "       <<  delay << " s"    << std::endl;
@@ -679,13 +678,13 @@ main (int argc, char *argv[])
   Simulator::Stop (Seconds(stopTime));
 /*----------------------------------------------------------------------*/
   
-  string base = "goal-topo/goal-topo-SDN__";
+  std::string base = "goal-topo/goal-topo-SDN__";
   //Throughput
-  string throu = base + "ThroughputVSTime";
-  string graphicsFileName        = throu + ".png";
-  string plotFileName            = throu + ".plt";
-  string plotTitle               = "Throughput vs Time";
-  string dataTitle               = "Throughput";
+  std::string throu = base + "ThroughputVSTime";
+  std::string graphicsFileName        = throu + ".png";
+  std::string plotFileName            = throu + ".plt";
+  std::string plotTitle               = "Throughput vs Time";
+  std::string dataTitle               = "Throughput";
   Gnuplot gnuplot (graphicsFileName);
   gnuplot.SetTitle (plotTitle);
   gnuplot.SetTerminal ("png");
@@ -694,11 +693,11 @@ main (int argc, char *argv[])
   dataset.SetTitle (dataTitle);
   dataset.SetStyle (Gnuplot2dDataset::LINES_POINTS);
   //Delay
-  string delay = base + "DelayVSTime";
-  string graphicsFileName1        = delay + ".png";
-  string plotFileName1            = delay + ".plt";
-  string plotTitle1               = "Delay vs Time";
-  string dataTitle1               = "Delay";
+  std::string delay = base + "DelayVSTime";
+  std::string graphicsFileName1        = delay + ".png";
+  std::string plotFileName1            = delay + ".plt";
+  std::string plotTitle1               = "Delay vs Time";
+  std::string dataTitle1               = "Delay";
   Gnuplot gnuplot1 (graphicsFileName1);
   gnuplot1.SetTitle (plotTitle1);
   gnuplot1.SetTerminal ("png");
@@ -707,11 +706,11 @@ main (int argc, char *argv[])
   dataset1.SetTitle (dataTitle1);
   dataset1.SetStyle (Gnuplot2dDataset::LINES_POINTS);
   //LostPackets
-  string lost = base + "LostPacketsVSTime";
-  string graphicsFileName2        = lost + ".png";
-  string plotFileName2            = lost + ".plt";
-  string plotTitle2               = "LostPackets vs Time";
-  string dataTitle2               = "LostPackets";
+  std::string lost = base + "LostPacketsVSTime";
+  std::string graphicsFileName2        = lost + ".png";
+  std::string plotFileName2            = lost + ".plt";
+  std::string plotTitle2               = "LostPackets vs Time";
+  std::string dataTitle2               = "LostPackets";
   Gnuplot gnuplot2 (graphicsFileName2);
   gnuplot2.SetTitle (plotTitle2);
   gnuplot2.SetTerminal ("png");
@@ -720,11 +719,11 @@ main (int argc, char *argv[])
   dataset2.SetTitle (dataTitle2);
   dataset2.SetStyle (Gnuplot2dDataset::LINES_POINTS);
   //Jitter
-  string jitter = base + "JitterVSTime";
-  string graphicsFileName3        = jitter + ".png";
-  string plotFileName3            = jitter + ".plt";
-  string plotTitle3               = "Jitter vs Time";
-  string dataTitle3               = "Jitter";
+  std::string jitter = base + "JitterVSTime";
+  std::string graphicsFileName3        = jitter + ".png";
+  std::string plotFileName3            = jitter + ".plt";
+  std::string plotTitle3               = "Jitter vs Time";
+  std::string dataTitle3               = "Jitter";
   Gnuplot gnuplot3 (graphicsFileName3);
   gnuplot3.SetTitle (plotTitle3);
   gnuplot3.SetTerminal ("png");
