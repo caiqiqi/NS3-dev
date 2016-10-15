@@ -55,6 +55,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <string>
 
 
 using namespace ns3;
@@ -147,17 +148,22 @@ CommandSetup (int argc, char **argv)
  * 由于包是在IP层进行track的，所以任何的四层(TCP)重传的包，都会被认为是一个新的包
  */
 void
-CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset)
+CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, 
+  Gnuplot2dDataset dataset,  Gnuplot2dDataset dataset1, 
+  Gnuplot2dDataset dataset2, Gnuplot2dDataset dataset3)
 {
   
-  double localThrou = 0.0;
+  double throu   = 0.0;
+  double delay   = 0.0;
+  double packets = 0.0;
+  double jitter  = 0.0;
   monitor->CheckForLostPackets ();
   std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
   /* since fmhelper is a pointer, we should use it as a pointer.
    * `fmhelper->GetClassifier ()` instead of `fmhelper.GetClassifier ()`
    */
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = stats.begin (); i != stats.end (); ++i)
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = stats.begin (); i != stats.end (); ++i)
     {
     /* 
      * `Ipv4FlowClassifier`
@@ -166,53 +172,46 @@ CheckThroughput (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2
     */
 
     /* 每个flow是根据包的五元组(协议，源IP/端口，目的IP/端口)来区分的 */
-    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (stats->first);
     // `192.168.0.11`是client(Node #14)的IP,
     // `192.168.0.7` 是client(Node #10)的IP
     if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
       {
-        // UDP_PROT_NUMBER = 17
-        if (17 == unsigned(t.protocol))
-        {
-          std::cout << "Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")\n";
-          std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s\n";
-          std::cout << "Lost Packets = " << i->second.lostPackets << "\n";
-          localThrou = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024 ;
-          std::cout << "  Throughput: " <<  localThrou << " Kbps\n";
-        }
-        else
-        {
-          std::cout << "This is not UDP traffic" << std::endl;
-        }
-      }
-     
-      // 每迭代一次就把`时间`和`吞吐量`加入到dataset里面
-      dataset.Add ((Simulator::Now ()).GetSeconds (), localThrou);
+          // UDP_PROT_NUMBER = 17
+          if (17 == unsigned(t.protocol))
+          {
+            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << "Flow " << stats->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
+            
+            throu   = stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024 ;
+            delay   = stats->second.delaySum.GetSeconds ();
+            packets = stats->second.lostPackets;
+            jitter  = stats->second.jitterSum.GetSeconds ();
 
-     }
+            std::cout << "Throughput: "  <<  throu << " Kbps" << std::endl;
+            std::cout << "Delay: "       <<  delay << " s"    << std::endl;
+            std::cout << "LostPackets: " <<  packets          << std::endl;
+            std::cout << "Jitter: "      <<  jitter           << std::endl;
+            // 每迭代一次就把`时间`和`吞吐量`加入到dataset里面
+            dataset.Add  (Simulator::Now().GetSeconds(), throu);
+            dataset1.Add (Simulator::Now().GetSeconds(), delay);
+            dataset2.Add (Simulator::Now().GetSeconds(), packets);
+            dataset3.Add (Simulator::Now().GetSeconds(), jitter);
+          }
+          else
+          {
+            std::cout << "This is not UDP traffic" << std::endl;
+          }
+      }
+
+    }
   /* check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
    * 表示每隔nSamplingPeriod时间
    */
-  Simulator::Schedule (Seconds(nSamplingPeriod), 
-    &CheckThroughput, fmhelper, monitor, dataset);
+  Simulator::Schedule (Seconds(nSamplingPeriod), &CheckMonitor, fmhelper, monitor, 
+    dataset, dataset1, dataset2, dataset3);
+
 }
 
-// By Joahannes Costa from GitHub
-void DelayMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, Gnuplot2dDataset dataset1){
-  
-  double delay = 0.0;
-  monitor->CheckForLostPackets(); 
-  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
-  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
-
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = flowStats.begin (); stats != flowStats.end (); ++stats){ 
-      //Ipv4FlowClassifier::FiveTuple fiveTuple = classifier->FindFlow (stats->first);
-      delay = stats->second.delaySum.GetSeconds ();
-      dataset1.Add((double)Simulator::Now().GetSeconds(), (double)delay);
-    }
-  
-  Simulator::Schedule(Seconds(1), &DelayMonitor, fmhelper, monitor, dataset1);
-}
 
 
 int
@@ -659,31 +658,101 @@ main (int argc, char *argv[])
 
 
 
-  NS_LOG_INFO ("------------Preparing for CheckThroughput.------------");
+  NS_LOG_INFO ("------------Preparing for Check all the params.------------");
   FlowMonitorHelper flowmon;
   Ptr<FlowMonitor> monitor = flowmon.InstallAll();
-  /* 表示从第#1秒开始 */
-  Simulator::Schedule(Seconds(1),&CheckThroughput, &flowmon, monitor, dataset);
+
+  Simulator::Stop (Seconds(stopTime));
+/*----------------------------------------------------------------------*/
+  
+  string base = "goal-topo-trad/goal-topo-trad__";
+  //Throughput
+  string throu = base + "ThroughputVSTime";
+  string graphicsFileName        = throu + ".png";
+  string plotFileName            = throu + ".plt";
+  string plotTitle               = "Throughput vs Time";
+  string dataTitle               = "Throughput";
+  Gnuplot gnuplot (graphicsFileName);
+  gnuplot.SetTitle (plotTitle);
+  gnuplot.SetTerminal ("png");
+  gnuplot.SetLegend ("Time", "Throughput");
+  Gnuplot2dDataset dataset;
+  dataset.SetTitle (dataTitle);
+  dataset.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+  //Delay
+  string delay = base + "DelayVSTime";
+  string graphicsFileName1        = delay + ".png";
+  string plotFileName1            = delay + ".plt";
+  string plotTitle1               = "Delay vs Time";
+  string dataTitle1               = "Delay";
+  Gnuplot gnuplot1 (graphicsFileName1);
+  gnuplot1.SetTitle (plotTitle1);
+  gnuplot1.SetTerminal ("png");
+  gnuplot1.SetLegend ("Time", "Delay");
+  Gnuplot2dDataset dataset1;
+  dataset1.SetTitle (dataTitle1);
+  dataset1.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+  //LostPackets
+  string lost = base + "LostPacketsVSTime";
+  string graphicsFileName2        = lost + ".png";
+  string plotFileName2            = lost + ".plt";
+  string plotTitle2               = "LostPackets vs Time";
+  string dataTitle2               = "LostPackets";
+  Gnuplot gnuplot2 (graphicsFileName2);
+  gnuplot2.SetTitle (plotTitle2);
+  gnuplot2.SetTerminal ("png");
+  gnuplot2.SetLegend ("Time", "LostPackets");
+  Gnuplot2dDataset dataset2;
+  dataset2.SetTitle (dataTitle2);
+  dataset2.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+  //Jitter
+  string jitter = base + "JitterVSTime";
+  string graphicsFileName3        = jitter + ".png";
+  string plotFileName3            = jitter + ".plt";
+  string plotTitle3               = "Jitter vs Time";
+  string dataTitle3               = "Jitter";
+  Gnuplot gnuplot3 (graphicsFileName3);
+  gnuplot3.SetTitle (plotTitle3);
+  gnuplot3.SetTerminal ("png");
+  gnuplot3.SetLegend ("Time", "Jitter");
+  Gnuplot2dDataset dataset3;
+  dataset3.SetTitle (dataTitle3);
+  dataset3.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+
+/*-----------------------------------------------------*/
+  // 测吞吐量, 延时, 丢包, 抖动
+  CheckMonitor(&flowmon, monitor, dataset, dataset1, dataset2, dataset3);
+/*-----------------------------------------------------*/
+
 
   NS_LOG_INFO ("------------Running Simulation.------------");
-  /* 以下的 Simulation::Stop() 和 Simulator::Run () 的顺序
-   * 是根据 `ns3-lab-loaded-from-internet/lab1-task1-appelman.cc` 来的
-   */
-  Simulator::Stop (Seconds(stopTime));
   Simulator::Run ();
 
-  // 测吞吐量
-  CheckThroughput(&flowmon, monitor, dataset);   // 这句好像是多余的啊，随便，反正只加了一次调用
-
-
-
-
-  Simulator::Destroy ();
-
-  NS_LOG_INFO ("-------------Done.-------------");
-
+  //Throughput
   gnuplot.AddDataset (dataset);
-  gnuplot.GenerateOutput (outputFileName);
+  std::ofstream plotFile (plotFileName.c_str());
+  gnuplot.GenerateOutput (plotFile);
+  plotFile.close ();
+  //Delay
+  gnuplot1.AddDataset (dataset1);
+  std::ofstream plotFile1 (plotFileName1.c_str());
+  gnuplot1.GenerateOutput (plotFile1);
+  plotFile1.close ();
+  //LostPackets
+  gnuplot2.AddDataset (dataset2);
+  std::ofstream plotFile2 (plotFileName2.c_str());
+  gnuplot2.GenerateOutput (plotFile2);
+  plotFile2.close ();
+  //Jitter
+  gnuplot3.AddDataset (dataset3);
+  std::ofstream plotFile3 (plotFileName3.c_str());
+  gnuplot3.GenerateOutput (plotFile3);
+  plotFile3.close ();
 
-  NS_LOG_INFO ("----------Added dataset to outputfile.----------");
+
+  monitor->SerializeToXmlFile("goal-topo-trad/goal-topo-trad.flowmon", true, true);
+  /* the SerializeToXmlFile () function 2nd and 3rd parameters 
+   * are used respectively to activate/deactivate the histograms and the per-probe detailed stats.
+   */
+  Simulator::Destroy ();
 }
