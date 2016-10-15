@@ -158,12 +158,12 @@ CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
   double packets = 0.0;
   double jitter  = 0.0;
   monitor->CheckForLostPackets ();
-  std::map<FlowId, FlowMonitor::FlowStats> stats = monitor->GetFlowStats ();
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats ();
   /* since fmhelper is a pointer, we should use it as a pointer.
    * `fmhelper->GetClassifier ()` instead of `fmhelper.GetClassifier ()`
    */
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator stats = stats.begin (); i != stats.end (); ++i)
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); ++i)
     {
     /* 
      * `Ipv4FlowClassifier`
@@ -172,7 +172,7 @@ CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
     */
 
     /* 每个flow是根据包的五元组(协议，源IP/端口，目的IP/端口)来区分的 */
-    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (stats->first);
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
     // `192.168.0.11`是client(Node #14)的IP,
     // `192.168.0.7` 是client(Node #10)的IP
     if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
@@ -180,17 +180,17 @@ CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
           // UDP_PROT_NUMBER = 17
           if (17 == unsigned(t.protocol))
           {
-            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << "Flow " << stats->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
+            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
             
-            throu   = stats->second.rxBytes * 8.0 / (stats->second.timeLastRxPacket.GetSeconds() - stats->second.timeFirstTxPacket.GetSeconds())/1024 ;
-            delay   = stats->second.delaySum.GetSeconds ();
-            packets = stats->second.lostPackets;
-            jitter  = stats->second.jitterSum.GetSeconds ();
+            throu   = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024 ;
+            delay   = i->second.delaySum.GetSeconds ();
+            packets = i->second.lostPackets;
+            jitter  = i->second.jitterSum.GetSeconds ();
 
-            std::cout << "Throughput: "  <<  throu << " Kbps" << std::endl;
-            std::cout << "Delay: "       <<  delay << " s"    << std::endl;
-            std::cout << "LostPackets: " <<  packets          << std::endl;
-            std::cout << "Jitter: "      <<  jitter           << std::endl;
+            std::cout << "  Throughput: "  <<  throu << " Kbps" << std::endl;
+            std::cout << "  Delay: "       <<  delay << " s"    << std::endl;
+            std::cout << "  LostPackets: " <<  packets          << std::endl;
+            std::cout << "  Jitter: "      <<  jitter           << std::endl;
             // 每迭代一次就把`时间`和`吞吐量`加入到dataset里面
             dataset.Add  (Simulator::Now().GetSeconds(), throu);
             dataset1.Add (Simulator::Now().GetSeconds(), delay);
