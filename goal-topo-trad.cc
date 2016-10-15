@@ -147,15 +147,11 @@ CommandSetup (int argc, char **argv)
  * 由于包是在IP层进行track的，所以任何的四层(TCP)重传的包，都会被认为是一个新的包
  */
 void
-CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, 
-  Gnuplot2dDataset dataset,  Gnuplot2dDataset dataset1, 
-  Gnuplot2dDataset dataset2, Gnuplot2dDataset dataset3)
+ThroughputMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, 
+  Gnuplot2dDataset dataset)
 {
   
   double throu   = 0.0;
-  double delay   = 0.0;
-  double packets = 0.0;
-  double jitter  = 0.0;
   monitor->CheckForLostPackets ();
   std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats ();
   /* since fmhelper is a pointer, we should use it as a pointer.
@@ -180,21 +176,10 @@ CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
           if (17 == unsigned(t.protocol))
           {
             std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
-            
             throu   = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024 ;
-            delay   = i->second.delaySum.GetSeconds ();
-            packets = i->second.lostPackets;
-            jitter  = i->second.jitterSum.GetSeconds ();
-
             std::cout << "  Throughput: "  <<  throu << " Kbps" << std::endl;
-            std::cout << "  Delay: "       <<  delay << " s"    << std::endl;
-            std::cout << "  LostPackets: " <<  packets          << std::endl;
-            std::cout << "  Jitter: "      <<  jitter           << std::endl;
-            // 每迭代一次就把`时间`和`吞吐量`加入到dataset里面
+
             dataset.Add  (Simulator::Now().GetSeconds(), throu);
-            dataset1.Add (Simulator::Now().GetSeconds(), delay);
-            dataset2.Add (Simulator::Now().GetSeconds(), packets);
-            dataset3.Add (Simulator::Now().GetSeconds(), jitter);
           }
           else
           {
@@ -206,9 +191,165 @@ CheckMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
   /* check throughput every nSamplingPeriod second(每隔nSamplingPeriod调用依次Simulation)
    * 表示每隔nSamplingPeriod时间
    */
-  Simulator::Schedule (Seconds(nSamplingPeriod), &CheckMonitor, fmhelper, monitor, 
-    dataset, dataset1, dataset2, dataset3);
+  Simulator::Schedule (Seconds(nSamplingPeriod), &ThroughputMonitor, fmhelper, monitor, 
+    dataset);
 
+}
+
+
+void
+DelayMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, 
+  Gnuplot2dDataset dataset1)
+{
+  
+  double delay   = 0.0;
+  monitor->CheckForLostPackets ();
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats ();
+  /* since fmhelper is a pointer, we should use it as a pointer.
+   * `fmhelper->GetClassifier ()` instead of `fmhelper.GetClassifier ()`
+   */
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); ++i)
+    {
+
+      Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+      if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
+        {
+            // UDP_PROT_NUMBER = 17
+            if (17 == unsigned(t.protocol))
+            {
+              std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
+              delay   = i->second.delaySum.GetSeconds ();
+              std::cout << "  Delay: "       <<  delay << " s"    << std::endl;
+  
+              dataset1.Add (Simulator::Now().GetSeconds(), delay);
+            }
+            else
+            {
+              std::cout << "This is not UDP traffic" << std::endl;
+            }
+        }
+
+    }
+  Simulator::Schedule (Seconds(nSamplingPeriod), &DelayMonitor, fmhelper, monitor, 
+    dataset1);
+
+}
+
+
+void
+LostPacketsMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, 
+  Gnuplot2dDataset dataset2)
+{
+  
+  double packets = 0.0;
+  monitor->CheckForLostPackets ();
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); ++i)
+    {
+
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+    if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
+      {
+          // UDP_PROT_NUMBER = 17
+          if (17 == unsigned(t.protocol))
+          {
+            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
+            packets = i->second.lostPackets;
+            std::cout << "  LostPackets: " <<  packets          << std::endl;
+
+            dataset2.Add (Simulator::Now().GetSeconds(), packets);
+          }
+          else
+          {
+            std::cout << "This is not UDP traffic" << std::endl;
+          }
+      }
+
+    }
+  Simulator::Schedule (Seconds(nSamplingPeriod), &LostPacketsMonitor, fmhelper, monitor, 
+    dataset2);
+
+}
+
+
+void
+JitterMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor, 
+  Gnuplot2dDataset dataset3)
+{
+  
+  double jitter  = 0.0;
+  monitor->CheckForLostPackets ();
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats ();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); ++i)
+    {
+
+    Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+    if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
+      {
+          // UDP_PROT_NUMBER = 17
+          if (17 == unsigned(t.protocol))
+          {
+            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
+            jitter  = i->second.jitterSum.GetSeconds ();
+            std::cout << "  Jitter: "      <<  jitter           << std::endl;
+
+            dataset3.Add (Simulator::Now().GetSeconds(), jitter);
+          }
+          else
+          {
+            std::cout << "This is not UDP traffic" << std::endl;
+          }
+      }
+
+    }
+  Simulator::Schedule (Seconds(nSamplingPeriod), &JitterMonitor, fmhelper, monitor, 
+    dataset3);
+
+}
+
+
+void PrintParams (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor){
+  double tempThroughput = 0.0;
+  monitor->CheckForLostPackets(); 
+  std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
+  Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
+
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); ++stats){ 
+      // A tuple: Source-ip, destination-ip, protocol, source-port, destination-port
+      Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
+      
+
+    if ((t.sourceAddress=="192.168.0.11" && t.destinationAddress == "10.0.0.5"))
+      {
+          // UDP_PROT_NUMBER = 17
+          if (17 == unsigned(t.protocol))
+          {
+            std::cout<<"Time: " << Simulator::Now ().GetSeconds () << " s," << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
+
+            std::cout<<"Tx Packets = " << i->second.txPackets<<std::endl;
+            std::cout<<"Rx Packets = " << i->second.rxPackets<<std::endl;
+            std::cout<<"Duration: " <<i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds()<<std::endl;
+            std::cout<<"Last Received Packet: "<< i->second.timeLastRxPacket.GetSeconds()<<" Seconds"<<std::endl;
+            tempThroughput = (i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024);
+            std::cout<<"Throughput: "<< tempThroughput <<" Kbps"<<std::endl;
+            std::cout<< "Delay: " << i->second.delaySum.GetSeconds () << std::endl;
+            std::cout<< "LostPackets: " << i->second.lostPackets << std::endl;
+            std::cout<< "Jitter: " << i->second.jitterSum.GetSeconds () << std::endl;
+            //std::cout<<"Last Received Packet: "<< i->second.timeLastRxPacket.GetSeconds()<<" Seconds ---->" << "Throughput: " << tempThroughput << " Kbps" << std::endl;
+            std::cout<<"------------------------------------------"<<std::endl;
+
+          }
+          else
+          {
+            std::cout << "This is not UDP traffic" << std::endl;
+          }
+      }
+    }
+  // 每隔一秒打印一次
+  Simulator::Schedule(Seconds(1), &PrintParams, fmhelper, monitor);
 }
 
 
@@ -716,8 +857,12 @@ main (int argc, char *argv[])
   dataset3.SetStyle (Gnuplot2dDataset::LINES_POINTS);
 
 /*-----------------------------------------------------*/
-  // 测吞吐量, 延时, 丢包, 抖动
-  CheckMonitor(&flowmon, monitor, dataset, dataset1, dataset2, dataset3);
+  // 测吞吐量, 延时, 丢包, 抖动, 最后打印出这些参数
+  ThroughputMonitor (&flowmon, monitor, dataset);
+  DelayMonitor      (&flowmon, monitor, dataset1);
+  LostPacketsMonitor(&flowmon, monitor, dataset2);
+  JitterMonitor     (&flowmon, monitor, dataset3);
+  PrintParams       (&flowmon, monitor);
 /*-----------------------------------------------------*/
 
 
