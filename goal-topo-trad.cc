@@ -175,10 +175,7 @@ ThroughputMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
           // UDP_PROT_NUMBER = 17
           if (17 == unsigned(t.protocol))
           {
-            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
             throu   = i->second.rxBytes * 8.0 / (i->second.timeLastRxPacket.GetSeconds() - i->second.timeFirstTxPacket.GetSeconds())/1024 ;
-            std::cout << "  Throughput: "  <<  throu << " Kbps" << std::endl;
-
             dataset.Add  (Simulator::Now().GetSeconds(), throu);
           }
           else
@@ -205,9 +202,6 @@ DelayMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
   double delay   = 0.0;
   monitor->CheckForLostPackets ();
   std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats ();
-  /* since fmhelper is a pointer, we should use it as a pointer.
-   * `fmhelper->GetClassifier ()` instead of `fmhelper.GetClassifier ()`
-   */
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier ());
   for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); ++i)
     {
@@ -218,10 +212,7 @@ DelayMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
             // UDP_PROT_NUMBER = 17
             if (17 == unsigned(t.protocol))
             {
-              std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
               delay   = i->second.delaySum.GetSeconds ();
-              std::cout << "  Delay: "       <<  delay << " s"    << std::endl;
-  
               dataset1.Add (Simulator::Now().GetSeconds(), delay);
             }
             else
@@ -255,10 +246,7 @@ LostPacketsMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
           // UDP_PROT_NUMBER = 17
           if (17 == unsigned(t.protocol))
           {
-            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
             packets = i->second.lostPackets;
-            std::cout << "  LostPackets: " <<  packets          << std::endl;
-
             dataset2.Add (Simulator::Now().GetSeconds(), packets);
           }
           else
@@ -292,10 +280,7 @@ JitterMonitor (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor,
           // UDP_PROT_NUMBER = 17
           if (17 == unsigned(t.protocol))
           {
-            std::cout << "Time: " << Simulator::Now ().GetSeconds () << " s" << " Flow " << i->first  << "  Protocol  " << "UDP" << " (" << t.sourceAddress << " -> " << t.destinationAddress << ")" << std::endl;
             jitter  = i->second.jitterSum.GetSeconds ();
-            std::cout << "  Jitter: "      <<  jitter           << std::endl;
-
             dataset3.Add (Simulator::Now().GetSeconds(), jitter);
           }
           else
@@ -317,7 +302,7 @@ void PrintParams (FlowMonitorHelper* fmhelper, Ptr<FlowMonitor> monitor){
   std::map<FlowId, FlowMonitor::FlowStats> flowStats = monitor->GetFlowStats();
   Ptr<Ipv4FlowClassifier> classifier = DynamicCast<Ipv4FlowClassifier> (fmhelper->GetClassifier());
 
-  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); ++stats){ 
+  for (std::map<FlowId, FlowMonitor::FlowStats>::const_iterator i = flowStats.begin (); i != flowStats.end (); i++){ 
       // A tuple: Source-ip, destination-ip, protocol, source-port, destination-port
       Ipv4FlowClassifier::FiveTuple t = classifier->FindFlow (i->first);
       
@@ -802,7 +787,7 @@ main (int argc, char *argv[])
   Simulator::Stop (Seconds(stopTime));
 /*----------------------------------------------------------------------*/
   
-  std::string base = "goal-topo-trad/goal-topo-trad__";
+  std::string base = "goal-topo-trad__";
   //Throughput
   std::string throu = base + "ThroughputVSTime";
   std::string graphicsFileName        = throu + ".png";
